@@ -66,7 +66,7 @@ VS
 
 		// Extract sprite position from world transform
 		uint ogDrawCall = i.instanceID;
-		uint spriteIndex = SortedSpriteHandles[ogDrawCall];
+		uint spriteIndex = ogDrawCall;
 		float4x4 finalTransform = SpriteDatas[spriteIndex].Transform;
 		
 		if(SpriteDatas[spriteIndex].BillboardMode <= 1)

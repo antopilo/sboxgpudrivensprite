@@ -12,9 +12,7 @@ CS
 		int SpriteIndex;
 		bool Visible;
 	};
-	
 	StructuredBuffer<VisResult> VisiblityResults < Attribute("VisiblityResults"); >;
-
 	bool IsSphereInsideFrustum(float4 planes[6], float3 center, float radius)
 	{
 		for (int i = 0; i < 6; ++i)

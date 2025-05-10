@@ -1,4 +1,6 @@
-﻿using Sandbox;
+﻿#define DEBUGCULL
+
+using Sandbox;
 using Sandbox.Internal;
 using Sandbox.Rendering;
 using Sandbox.UI;
@@ -20,29 +22,56 @@ struct SpriteData
 	public Vector4 TintColor;
 }
 
+struct SpriteDataVis
+{ 
+	bool IsVisible;
+}
+
 public sealed class SpriteRenderObject : SceneCustomObject
 {
-	// Render specific
-	public ComputeShader computeShader;
-	public ComputeShader bitonicShader;
-	public Shader shader;
+	public enum CullMethod
+	{ 
+		GPU,
+		CPU,
+		None
+	}
+
+	public enum SortMode
+	{
+		GPU,
+		CPU,
+		None
+	}
+
+	private Scene Scene;
+
+	private CullMethod RendererCullMethod = CullMethod.CPU;
+	private SortMode RendererSortMode = SortMode.CPU;
+
+	// Max amount of rendered sprites
+	private const int MaxSprites = 25000;
+
+	// Geometry stuff
 	public Material spriteMat;
 	private Mesh spriteMesh;
 	private Model spriteModel;
 
-	// Batching specific
-	List<BatchedSpriteComponent> sprites = new();
-	GpuBuffer gpuBuffer;
-	Scene Scene;
+	// Shaders & Stages
+	public ComputeShader computeShader;
+	public ComputeShader bitonicShader;
+	public Shader shader;
 
-	GpuBuffer indirectDrawCount;
+	// GPU driven stuff
+	List<BatchedSpriteComponent> sprites { get; set; } = new();
+	private GpuBuffer gpuBuffer;
+	private GpuBuffer indirectDrawCount;
 
-	// Bionicsort
-	GpuBuffer distancesBuffer;
-	GpuBuffer IdBuffer;
-	private int SortCount = 0; // The number of sprites to sort, this is the closest power of 2 size for bitonic search
+	// Sorting
+	private GpuBuffer distancesBuffer;
+	private GpuBuffer IdBuffer;
+	private int SortCount = 0; // Power of 2 size for GPU Sorting
 
-	// Cull data
+	// Culling
 	GpuBuffer CullData;
 
 	public int InstanceCount => sprites.Count;
@@ -54,37 +83,47 @@ public sealed class SpriteRenderObject : SceneCustomObject
 
 	public void InitMesh()
 	{
-		spriteMesh = new Mesh( spriteMat );
-		spriteMesh.CreateVertexBuffer<Vertex>( 4, Vertex.Layout, new Vertex[] {
-			new Vertex( new Vector3( -200, -200, 0 ), Vector3.Up, Vector3.Forward, new Vector4( 0, 0, 0, 0 ) ),
-			new Vertex( new Vector3( 200, -200, 0 ), Vector3.Up, Vector3.Forward, new Vector4( 1, 0, 0, 0 ) ),
-			new Vertex( new Vector3( 200, 200, 0 ), Vector3.Up, Vector3.Forward, new Vector4( 1, 1, 0, 0 ) ),
-			new Vertex( new Vector3( -200, 200, 0 ), Vector3.Up, Vector3.Forward, new Vector4( 0, 1, 0, 0 ) ),
-		} );
-		spriteMesh.CreateIndexBuffer( 6, new[] { 0, 1, 2, 0, 2, 3 } );
-		spriteMesh.SetIndexRange( 0, 6 );
-		spriteMesh.Bounds = BBox.FromPositionAndSize( 0, 100 );
-		spriteModel = new ModelBuilder().AddMesh( spriteMesh ).Create(); 
-
 		Flags.CastShadows = true;
 		Flags.IsOpaque = false;
 		Flags.IsTranslucent = true;
-		gpuBuffer = new GpuBuffer<SpriteData>( 256 );
 
-		indirectDrawCount = new GpuBuffer<uint>( 5, GpuBuffer.UsageFlags.Structured, "IndirectDrawCount" );
+		// Create sprite mesh
+		{
+			spriteMesh = new Mesh( spriteMat );
+			const float spriteSize = 200f;
+			spriteMesh.CreateVertexBuffer<Vertex>( 4, Vertex.Layout, new Vertex[] {
+				new ( new ( -spriteSize, -spriteSize, 0 ), Vector3.Up, Vector3.Forward, new ( 0, 0, 0, 0 ) ),
+				new ( new (  spriteSize, -spriteSize, 0 ), Vector3.Up, Vector3.Forward, new ( 1, 0, 0, 0 ) ),
+				new ( new (  spriteSize,  spriteSize, 0 ), Vector3.Up, Vector3.Forward, new ( 1, 1, 0, 0 ) ),
+				new ( new ( -spriteSize,  spriteSize, 0 ), Vector3.Up, Vector3.Forward, new ( 0, 1, 0, 0 ) ),
+			} );
+			spriteMesh.CreateIndexBuffer( 6, new[] { 0, 1, 2, 0, 2, 3 } );
+			spriteMesh.SetIndexRange( 0, 6 );
+			spriteMesh.Bounds = BBox.FromPositionAndSize( 0, spriteSize );
+			spriteModel = new ModelBuilder().AddMesh( spriteMesh ).Create();
+		}
 
-		// Biotonic sort
-		distancesBuffer = new GpuBuffer<float>(256, GpuBuffer.UsageFlags.Structured, "DistancesBuffer2" );
-		IdBuffer = new GpuBuffer<uint>( 256, GpuBuffer.UsageFlags.Structured, "SortedBuffer" );
+		// GPU Driven stuff
+		{
+			gpuBuffer = new GpuBuffer<SpriteData>( MaxSprites );
+			indirectDrawCount = new GpuBuffer<uint>( 5, GpuBuffer.UsageFlags.Structured, "IndirectDrawCount" );
 
-		const int planeCount = 6;
-		CullData = new GpuBuffer<float>( 4 * planeCount, GpuBuffer.UsageFlags.Structured, "CullingPlanes" );
+			// Frustum data for GPU culling
+			const int frustumPlaneCount = 6;
+			const int frustumDataSize = 4;
+			CullData = new GpuBuffer<float>( frustumDataSize * frustumPlaneCount, GpuBuffer.UsageFlags.Structured, "CullingPlanes" );
+		}
+
+		// GPU Sort
+		{
+			distancesBuffer = new GpuBuffer<float>( MaxSprites, GpuBuffer.UsageFlags.Structured, "DistancesBuffer2" );
+			IdBuffer = new GpuBuffer<uint>( MaxSprites, GpuBuffer.UsageFlags.Structured, "SortedBuffer" );
+		}
 	}
 
 	private void UpdateBuffers()
 	{
 		var newSortCount = (1 << (int)Math.Ceiling( Math.Log2( Math.Max( 1, sprites.Count ) ) ));
-
 		if( newSortCount == SortCount )
 			return;
 
@@ -109,51 +148,82 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		sprites.RemoveAll( x => x == sprite );
 	}
 
-	public bool IsSphereInFront(Sandbox.Plane plane, Vector3 center, float radius )
+	private void GPUSort(List<float> distances)
 	{
-		// Plane.Normal * center + Plane.Distance > -radius
-		// returns true if the sphere is at least partially in front of the plane
-		float pointDistance = plane.GetDistance( center );
-		if ( pointDistance < -radius )
+		// Clear
+		if ( SortCount > 2 )
 		{
-			return false;
+			bitonicShader.Attributes.Set( "D_CLEAR", 1 );
+			bitonicShader.Attributes.Set( "SortBuffer", IdBuffer );
+			bitonicShader.Attributes.Set( "DistanceBuffer", distancesBuffer );
+			bitonicShader.Attributes.Set( "Count", SortCount );
+
+			bitonicShader.Dispatch( SortCount, 1, 1 );
+
+			Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 		}
-		else if(pointDistance < radius)
+
+		distancesBuffer.SetData<float>( distances.ToArray() );
+
+		Graphics.DrawText( new Rect( 0, 80, 100, 50 ), SortCount.ToString(), Color.Yellow );
+		// Sort
+		if ( SortCount > 2 )
 		{
-			return true;
+			bitonicShader.Attributes.Set( "D_CLEAR", 0 );
+			bitonicShader.Attributes.Set( "SortBuffer", IdBuffer );
+			bitonicShader.Attributes.Set( "DistanceBuffer", distancesBuffer );
+			bitonicShader.Attributes.Set( "Count", sprites.Count );
+
+			int threadsX = Math.Min( SortCount, 262144 );
+			int threadsY = (SortCount + 262144 - 1) / 262144;
+			for ( int dim = 2; dim <= SortCount; dim *= 2 )
+			{
+				bitonicShader.Attributes.Set( "Dim", 1 );
+				for ( int block = dim / 2; block > 0; block /= 2 )
+				{
+					bitonicShader.Attributes.Set( "Block", 2 );
+					bitonicShader.Dispatch( threadsX, threadsY, 1 );
+					Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+				}
+			}
 		}
 
-		return true;
-	}
+		Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.GenericRead );
 
-	public bool IsSphereInside(Frustum frustum, in Vector3 center, float radius )
-	{
-		if ( !IsSphereInFront( frustum.LeftPlane, center, radius ) )
-			return false;
+#if GPUCULLDEBUG
+		var data = new uint[SortCount];
+		IdBuffer.GetData<uint>( data );
 
-		if ( !IsSphereInFront( frustum.RightPlane, center, radius ) )
-			return false;
+		string sortedString = string.Empty;
+		foreach ( var id in data )
+		{
+			sortedString += id.ToString() + "\n";
+		}
+		float xPos = 50;
+		Graphics.DrawText( new Rect( xPos, 80, 100, 50 ), "SortedID", Color.Red );
+		Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), sortedString, Color.Red );
 
-		if ( !IsSphereInFront( frustum.TopPlane, center, radius ) )
-			return false;
+		var dists = new float[SortCount];
+		distancesBuffer.GetData<float>( dists );
 
-		if ( !IsSphereInFront(frustum.BottomPlane, center, radius ) )
-			return false;
+		string distString = string.Empty;
+		foreach ( var dist in dists )
+		{
+			distString += dist.ToString() + "\n";
+		}
 
-		if ( !IsSphereInFront( frustum.NearPlane, center, radius ) )
-			return false;
-
-		if ( !IsSphereInFront( frustum.FarPlane, center, radius ) )
-			return false;
-
-		return true;
+		xPos = 200;
+		Graphics.DrawText( new Rect( xPos, 80, 100, 50 ), "Distances", Color.Blue );
+		Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), distString, Color.Blue );
+#endif
 	}
 
 	public override void RenderSceneObject()
 	{
 		base.RenderSceneObject();
 
-		List<SpriteData> gpuData = new List<SpriteData>(sprites.Count());
+		List<SpriteData> bindlessSprites = new (sprites.Count);
 
 		Vector3 camPos = Vector3.Zero;
 		Vector3 camForward;
@@ -178,48 +248,34 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			var frustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
 			List<Vector4> planes =
 			[
-				new Vector4( -frustum.LeftPlane.Normal, frustum.LeftPlane.Distance),
-				new Vector4( -frustum.RightPlane.Normal, frustum.RightPlane.Distance ),
-				new Vector4( -frustum.TopPlane.Normal, frustum.TopPlane.Distance ),
-				new Vector4( -frustum.BottomPlane.Normal, frustum.BottomPlane.Distance ),
-				new Vector4( -frustum.FarPlane.Normal, frustum.FarPlane.Distance ),
-				new Vector4( -frustum.NearPlane.Normal, frustum.NearPlane.Distance ),
+				new ( -frustum.LeftPlane.Normal, frustum.LeftPlane.Distance),
+				new ( -frustum.RightPlane.Normal, frustum.RightPlane.Distance ),
+				new ( -frustum.TopPlane.Normal, frustum.TopPlane.Distance ),
+				new ( -frustum.BottomPlane.Normal, frustum.BottomPlane.Distance ),
+				new ( -frustum.FarPlane.Normal, frustum.FarPlane.Distance ),
+				new ( -frustum.NearPlane.Normal, frustum.NearPlane.Distance ),
 			];
 			Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
 			CullData.SetData<Vector4>( planes.ToArray() );
-
-			string planesString = string.Empty;
-			foreach(var plane in planes)
-			{
-				planesString += plane.ToString() + "\n";
-			}
-
-			//Graphics.DrawText( new Rect( 120, 16 ), planesString, Color.Black );
 		}
 
-		var sortedSprites = sprites
-			//.Where( s => IsSphereInside( Scene.Camera.GetFrustum( Scene.Camera.ScreenRect ), s.WorldPosition, 5.0f ) )
-			//.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).Reverse()
-			.ToList();
-
-		foreach(var sprite in sprites)
+		switch ( RendererSortMode )
 		{
-			GameTransform transform = sprite.Transform;
-			transform.Scale = 6.0f;
-
-			Frustum frustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
-			frustum.IsInside( sprite.WorldPosition );
-
-			if ( IsSphereInside( frustum, sprite.WorldPosition, 200.0f ))
-			{
-				Graphics.DrawModel( Model.Sphere, transform.World );
-			}
+			case SortMode.GPU:
+				List<float> gpuDistances = sprites.Select( c => Vector3.DistanceBetweenSquared( camPos, c.WorldPosition ) ).ToList();
+				//GPUSort( gpuDistances );
+				break;
+			case SortMode.CPU:
+				sprites = sprites.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).Reverse().ToList();
+				break;
+			case SortMode.None:
+				break; // Nothing
 		}
 
-		foreach ( var data in sortedSprites )
+		foreach ( var data in sprites )
 		{
 			// Billboard rotation matrix: face the camera from sprite's world position
-			gpuData.Add( new SpriteData()
+			bindlessSprites.Add( new SpriteData()
 			{
 				Transform = Matrix4x4.CreateTranslation(data.WorldPosition),
 				ColorTextureIndex = data.SpriteTexture.IsValid() ? data.SpriteTexture.Index : -1,
@@ -229,102 +285,40 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			} );
 		}
 
+
+
 		// GPU sort
-		UpdateBuffers();
+		//UpdateBuffers();
 
-		List<float> distances = new List<float>( SortCount );
-		List<uint> indices = new List<uint>( SortCount );
-		uint i = 0;
-		foreach ( var sprite in sprites )
+#if DEBUGCULL
+		foreach(var sprite in sprites)
 		{
-			distances.Add(Vector3.DistanceBetweenSquared( camPos, sprite.WorldPosition ) );
-			indices.Add( i++ );
+			GameTransform transform = sprite.Transform;
+			transform.Scale = 6.0f;
+
+			Frustum frustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
+			frustum.IsInside( sprite.WorldPosition );
+
+			if ( CullingUtils.IsSphereInsideFrustum( frustum, sprite.WorldPosition, 200.0f ))
+			{
+				Graphics.DrawModel( Model.Sphere, transform.World );
+			}
 		}
-
-		
-
-		{
-			// Clear
-			if(SortCount > 2)
-			{
-				bitonicShader.Attributes.SetCombo( "D_CLEAR", 1 );
-				bitonicShader.Attributes.Set( "SortBuffer", IdBuffer );
-				bitonicShader.Attributes.Set( "DistanceBuffer", distancesBuffer );
-				bitonicShader.Attributes.Set( "Count", SortCount );
-
-				bitonicShader.Dispatch( SortCount, 1, 1 );
-
-				Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-				Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-			}
-
-			distancesBuffer.SetData<float>( distances.ToArray() );
-			IdBuffer.SetData<uint>( indices.ToArray() );
-
-			// Sort
-			if ( SortCount > 2 )
-			{
-				bitonicShader.Attributes.SetCombo( "D_CLEAR", 0 );
-				bitonicShader.Attributes.Set( "SortBuffer", IdBuffer );
-				bitonicShader.Attributes.Set( "DistanceBuffer", distancesBuffer );
-				bitonicShader.Attributes.Set( "Count", SortCount );
-
-				int threadsX = Math.Min( SortCount, 262144 );
-				int threadsY = (SortCount + 262144 - 1) / 262144;
-				int threadsZ = 1;
-				for ( int dim = 2; dim <= SortCount; dim <<= 1 )
-				{
-					bitonicShader.Attributes.Set( "Dim", dim );
-					for ( int block = dim >> 1; block > 0; block >>= 1 )
-					{
-						bitonicShader.Attributes.Set( "Block", block );
-						bitonicShader.Dispatch( threadsX, threadsY, threadsZ );
-						Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-					}
-				}
-			}
-
-			//Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-
-			var data = new uint[SortCount];
-			IdBuffer.GetData<uint>( data );
-
-			string sortedString = string.Empty;
-			foreach ( var id in data )
-			{
-				sortedString += id.ToString() + "\n";
-			}
-			float xPos = 50;
-			Graphics.DrawText( new Rect( xPos, 80, 100, 50 ), "SortedID", Color.Red );
-			Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), sortedString, Color.Red );
-
-			var dists = new float[SortCount];
-			distancesBuffer.GetData<float>( dists );
-
-			string distString = string.Empty;
-			foreach ( var dist in dists )
-			{
-				distString += dist.ToString() + "\n";
-			}
-
-			xPos = 200;
-			Graphics.DrawText( new Rect( xPos, 80, 100, 50 ), "Distances", Color.Blue );
-			Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), distString, Color.Blue );
-		}
+#endif
 
 		// GPU Driven Indirect Draw
 		{
 			Graphics.ResourceBarrierTransition( indirectDrawCount, ResourceState.UnorderedAccess );
-			computeShader.Attributes.Set( "IndirectDrawCount", gpuData.Count); 
+			computeShader.Attributes.Set( "IndirectDrawCount", bindlessSprites.Count); 
 			computeShader.Attributes.Set( "IndirectDrawCountBuffer", indirectDrawCount );
 			computeShader.Dispatch( 1, 1, 1 );
 			Graphics.ResourceBarrierTransition( indirectDrawCount, ResourceState.UnorderedAccess, ResourceState.IndirectArgument );
 		}
 
-		// Draw
+		// Shade
 		{
 			Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
-			gpuBuffer.SetData<SpriteData>( gpuData.ToArray() );
+			gpuBuffer.SetData<SpriteData>( bindlessSprites.ToArray() );
 
 			Graphics.ResourceBarrierTransition(gpuBuffer, ResourceState.GenericRead );
 			Graphics.ResourceBarrierTransition( CullData, ResourceState.GenericRead );

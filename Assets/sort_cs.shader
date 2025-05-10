@@ -32,22 +32,22 @@ CS
 	int Block < Attribute( "Block" ); >;
 	int Dim < Attribute( "Dim" ); >;
 
-	DynamicCombo( D_CLEAR, 0..1, Sys( ALL ) );
+	int D_CLEAR < Attribute( "D_CLEAR" ); >;
 
 	[numthreads( GROUP_SIZE, 1, 1 ) ]
 	void MainCs( uint2 dispatchId : SV_DispatchThreadID )
 	{
 		uint currentIndex = dispatchId.x + dispatchId.y * MAX_DIM_THREADS;
-		
-		#if ( D_CLEAR )
+
+		if ( D_CLEAR == 1)
 		{
 			if ( currentIndex >= Count )
 				return;
 
-			SortBuffer[currentIndex] = currentIndex;
+			SortBuffer[currentIndex] = currentIndex; 
 			DistanceBuffer[currentIndex] = FLT_MAX;
 		}
-		#else
+		else
 		{
 			uint compareIndex = currentIndex ^ Block;
 			if ( currentIndex >= Count || compareIndex >= Count || compareIndex < currentIndex )
@@ -59,15 +59,14 @@ CS
 			float distanceA = DistanceBuffer[indexA];
 			float distanceB = DistanceBuffer[indexB];
 
-			bool ascending = ( currentIndex & Dim ) == 0;
-			float comparison = ( distanceA - distanceB ) * ( ascending ? 1 : -1 );
+			bool ascending = (currentIndex / Block) % 2 == 0;
+    		float comparison = (distanceA - distanceB) * (ascending ? 1 : -1);
 
-			if ( comparison > 0 )
+			if (comparison < 0)
 			{
-				SortBuffer[currentIndex] = 0;
-				SortBuffer[compareIndex] = 0;
+				SortBuffer[currentIndex] = currentIndex;
+				SortBuffer[compareIndex] = compareIndex;
 			}
 		}
-		#endif
 	}
 }
