@@ -194,7 +194,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 				planesString += plane.ToString() + "\n";
 			}
 
-			Graphics.DrawText( new Rect( 120, 16 ), planesString, Color.Black );
+			//Graphics.DrawText( new Rect( 120, 16 ), planesString, Color.Black );
 		}
 
 		var sortedSprites = sprites
@@ -241,8 +241,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			indices.Add( i++ );
 		}
 
-		distancesBuffer.SetData<float>( distances.ToArray() );
-		IdBuffer.SetData<uint>( indices.ToArray() );
+		
 
 		{
 			// Clear
@@ -258,6 +257,9 @@ public sealed class SpriteRenderObject : SceneCustomObject
 				Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 				Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 			}
+
+			distancesBuffer.SetData<float>( distances.ToArray() );
+			IdBuffer.SetData<uint>( indices.ToArray() );
 
 			// Sort
 			if ( SortCount > 2 )
@@ -282,7 +284,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 				}
 			}
 
-			Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			//Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 
 			var data = new uint[SortCount];
 			IdBuffer.GetData<uint>( data );
@@ -292,8 +294,9 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			{
 				sortedString += id.ToString() + "\n";
 			}
-
-			Graphics.DrawText( new Rect( 10, 50 ), sortedString, Color.Red );
+			float xPos = 50;
+			Graphics.DrawText( new Rect( xPos, 80, 100, 50 ), "SortedID", Color.Red );
+			Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), sortedString, Color.Red );
 
 			var dists = new float[SortCount];
 			distancesBuffer.GetData<float>( dists );
@@ -304,7 +307,9 @@ public sealed class SpriteRenderObject : SceneCustomObject
 				distString += dist.ToString() + "\n";
 			}
 
-			Graphics.DrawText( new Rect( 100, 50 ), distString, Color.Blue );
+			xPos = 200;
+			Graphics.DrawText( new Rect( xPos, 80, 100, 50 ), "Distances", Color.Blue );
+			Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), distString, Color.Blue );
 		}
 
 		// GPU Driven Indirect Draw
