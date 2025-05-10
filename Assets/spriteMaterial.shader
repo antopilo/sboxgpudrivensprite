@@ -66,7 +66,7 @@ VS
 
 		// Extract sprite position from world transform
 		uint ogDrawCall = i.instanceID;
-		uint spriteIndex = ogDrawCall;
+		uint spriteIndex = SortedSpriteHandles[ogDrawCall];
 		float4x4 finalTransform = SpriteDatas[spriteIndex].Transform;
 		
 		if(SpriteDatas[spriteIndex].BillboardMode <= 1)
@@ -109,11 +109,11 @@ VS
 			bool isCulled = IsSphereInsideFrustum(planes, leftHandedPos.xyz, 200.0f);
 			if(!isCulled)
 			{
-				ogDrawCall = 1;
+				//ogDrawCall = 1;
 			}
 			else
 			{
-				ogDrawCall = 0;
+				//ogDrawCall = 0;
 			}
 
 			finalTransform = view;
@@ -168,8 +168,8 @@ PS
 		m.Normal = NormalTexture.Sample( g_sPointWrap, i.vTextureCoords.xy).rgb;
 		m.Opacity = tintColor.a; 
 
-		float debugCol = i.drawOrder / 8.0f;
-		m.Albedo.rgb = i.drawOrder == 1 ? float3(1, 0, 0) : float3(0, 1, 0);
+		float debugCol = i.drawOrder / 19.0f;
+		m.Albedo.rgb = float3(debugCol, 0, 0);
 		m.Transmission = float3(tintColor.a, tintColor.a, tintColor.a);
 		return ShadingModelStandard::Shade( i, m );
 	}

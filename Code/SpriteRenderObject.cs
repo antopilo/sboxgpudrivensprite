@@ -40,6 +40,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 	// Bionicsort
 	GpuBuffer distancesBuffer;
 	GpuBuffer IdBuffer;
+	private int SortCount = 0; // The number of sprites to sort, this is the closest power of 2 size for bitonic search
 
 	// Cull data
 	GpuBuffer CullData;
@@ -80,9 +81,27 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		CullData = new GpuBuffer<float>( 4 * planeCount, GpuBuffer.UsageFlags.Structured, "CullingPlanes" );
 	}
 
+	private void UpdateBuffers()
+	{
+		var newSortCount = (1 << (int)Math.Ceiling( Math.Log2( Math.Max( 1, sprites.Count ) ) ));
+
+		if( newSortCount == SortCount )
+			return;
+
+		SortCount = newSortCount;
+
+		// Resize buffers
+		distancesBuffer?.Dispose();
+		distancesBuffer = new GpuBuffer<float>( SortCount, GpuBuffer.UsageFlags.Structured, "DistancesBuffer" );
+
+		IdBuffer?.Dispose();
+		IdBuffer = new GpuBuffer<uint>( SortCount, GpuBuffer.UsageFlags.Structured, "SortedBuffer" );
+	}
+
 	public void RegisterInstance( BatchedSpriteComponent sprite )
 	{
 		sprites.Add( sprite );
+		//UpdateBuffers();
 	}
 
 	public void UnregisterInstance( BatchedSpriteComponent sprite )
@@ -180,7 +199,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 
 		var sortedSprites = sprites
 			//.Where( s => IsSphereInside( Scene.Camera.GetFrustum( Scene.Camera.ScreenRect ), s.WorldPosition, 5.0f ) )
-			.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).Reverse()
+			//.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).Reverse()
 			.ToList();
 
 		foreach(var sprite in sprites)
@@ -210,6 +229,83 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			} );
 		}
 
+		// GPU sort
+		UpdateBuffers();
+
+		List<float> distances = new List<float>( SortCount );
+		List<uint> indices = new List<uint>( SortCount );
+		uint i = 0;
+		foreach ( var sprite in sprites )
+		{
+			distances.Add(Vector3.DistanceBetweenSquared( camPos, sprite.WorldPosition ) );
+			indices.Add( i++ );
+		}
+
+		distancesBuffer.SetData<float>( distances.ToArray() );
+		IdBuffer.SetData<uint>( indices.ToArray() );
+
+		{
+			// Clear
+			if(SortCount > 2)
+			{
+				bitonicShader.Attributes.SetCombo( "D_CLEAR", 1 );
+				bitonicShader.Attributes.Set( "SortBuffer", IdBuffer );
+				bitonicShader.Attributes.Set( "DistanceBuffer", distancesBuffer );
+				bitonicShader.Attributes.Set( "Count", SortCount );
+
+				bitonicShader.Dispatch( SortCount, 1, 1 );
+
+				Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+				Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			}
+
+			// Sort
+			if ( SortCount > 2 )
+			{
+				bitonicShader.Attributes.SetCombo( "D_CLEAR", 0 );
+				bitonicShader.Attributes.Set( "SortBuffer", IdBuffer );
+				bitonicShader.Attributes.Set( "DistanceBuffer", distancesBuffer );
+				bitonicShader.Attributes.Set( "Count", SortCount );
+
+				int threadsX = Math.Min( SortCount, 262144 );
+				int threadsY = (SortCount + 262144 - 1) / 262144;
+				int threadsZ = 1;
+				for ( int dim = 2; dim <= SortCount; dim <<= 1 )
+				{
+					bitonicShader.Attributes.Set( "Dim", dim );
+					for ( int block = dim >> 1; block > 0; block >>= 1 )
+					{
+						bitonicShader.Attributes.Set( "Block", block );
+						bitonicShader.Dispatch( threadsX, threadsY, threadsZ );
+						Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+					}
+				}
+			}
+
+			Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+
+			var data = new uint[SortCount];
+			IdBuffer.GetData<uint>( data );
+
+			string sortedString = string.Empty;
+			foreach ( var id in data )
+			{
+				sortedString += id.ToString() + "\n";
+			}
+
+			Graphics.DrawText( new Rect( 10, 50 ), sortedString, Color.Red );
+
+			var dists = new float[SortCount];
+			distancesBuffer.GetData<float>( dists );
+
+			string distString = string.Empty;
+			foreach ( var dist in dists )
+			{
+				distString += dist.ToString() + "\n";
+			}
+
+			Graphics.DrawText( new Rect( 100, 50 ), distString, Color.Blue );
+		}
 
 		// GPU Driven Indirect Draw
 		{
