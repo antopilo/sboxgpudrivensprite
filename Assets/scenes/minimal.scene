@@ -1,0 +1,1093 @@
+{
+  "__guid": "325a4042-0696-43dd-a79d-dcc314299ba3",
+  "GameObjects": [
+    {
+      "__guid": "c5c43a5f-3297-453c-8d16-00f73627a383",
+      "Flags": 0,
+      "Name": "Scene Information",
+      "Position": "0,707.4802,7.52645",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.SceneInformation",
+          "__guid": "61b5b2b8-b3e6-4333-8748-906cf3ff70f2",
+          "Author": null,
+          "Changes": "",
+          "Description": "",
+          "Group": null,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "SceneTags": "",
+          "Title": "minimal",
+          "Version": null
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "bfc59c12-1ed2-4f91-8956-a95a315eac3c",
+      "Flags": 0,
+      "Name": "Sun",
+      "Position": "317.3167,284.291,128.1393",
+      "Rotation": "-0.137689,0.9104317,0.05832909,0.3856858",
+      "Tags": "light_directional,light",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.DirectionalLight",
+          "__guid": "d3659344-a90d-48fa-927a-095f70fe041f",
+          "FogMode": "Enabled",
+          "FogStrength": 1,
+          "LightColor": "0.94419,0.97767,1,1",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Shadows": true,
+          "SkyColor": "0.2532,0.32006,0.35349,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "3ee1c9f4-07be-4e0b-8b23-67bee2d8ec8a",
+      "Flags": 0,
+      "Name": "Camera",
+      "Position": "1104.884,-2641.232,673.2196",
+      "Rotation": "0,0,0.7071067,0.7071068",
+      "Scale": "1.733525,1,1",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.CameraComponent",
+          "__guid": "cf3cbf96-22b6-4be4-a5d0-672a96c17f9f",
+          "BackgroundColor": "0.33333,0.46275,0.52157,1",
+          "ClearFlags": "All",
+          "FieldOfView": 42.11,
+          "FovAxis": "Horizontal",
+          "IsMainCamera": true,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Orthographic": false,
+          "OrthographicHeight": 1204,
+          "Priority": 1,
+          "RenderExcludeTags": "",
+          "RenderTags": "",
+          "TargetEye": "None",
+          "Viewport": "0,0,1,1",
+          "ZFar": 10000,
+          "ZNear": 63.936516
+        },
+        {
+          "__type": "Sandbox.Bloom",
+          "__guid": "d73ef723-c888-41d4-802e-f797c79318be",
+          "__version": 1,
+          "Gamma": 2.2,
+          "Mode": "Additive",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Strength": 0.5,
+          "Threshold": 1.25,
+          "Tint": "1,1,1,1"
+        },
+        {
+          "__type": "Sandbox.Tonemapping",
+          "__guid": "9d76f362-7227-40eb-a189-69353c780c46",
+          "__version": 3,
+          "AutoExposureEnabled": true,
+          "ExposureCompensation": 0,
+          "ExposureMethod": "RGB",
+          "MaximumExposure": 2,
+          "MinimumExposure": 1,
+          "Mode": "ACES",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Rate": 1
+        },
+        {
+          "__type": "Sandbox.Sharpen",
+          "__guid": "0bffee5e-19f2-41c4-88f9-faefbcce6bf4",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Scale": 0.2
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "54dbfb4b-1047-4ccd-8e38-34f5ac9f388c",
+      "Flags": 0,
+      "Name": "Sprite",
+      "Position": "1723.789,-4055.49,-53.7774",
+      "Rotation": "0.06662448,0.9532452,0.275869,-0.1038324",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "BatchedSpriteComponent",
+          "__guid": "08fe610a-3d7e-4702-88b5-e5b1e016ee92",
+          "Alpha": 0.6999999,
+          "Billboard": "YOnly",
+          "NormalTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": true,
+              "NormalScale": 41.300003,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/d7901908d97a2eda.vtex"
+          },
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "SpriteTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": false,
+              "NormalScale": 1,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/4af825ff986992ef.vtex"
+          },
+          "Tinting": "1,1,1,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "440b8c7b-1564-49b7-b929-18745bae53cf",
+      "Flags": 0,
+      "Name": "Sprite (2)",
+      "Position": "540.7983,-780.2745,134.52",
+      "Rotation": "0.06662448,0.9532452,0.275869,-0.1038324",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "BatchedSpriteComponent",
+          "__guid": "6ca055f8-88f6-48d8-97c9-978456713c15",
+          "Alpha": 0.6999999,
+          "Billboard": "YOnly",
+          "NormalTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": true,
+              "NormalScale": 41.300003,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/d7901908d97a2eda.vtex"
+          },
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "SpriteTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": false,
+              "NormalScale": 1,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/4af825ff986992ef.vtex"
+          },
+          "Tinting": "1,1,1,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "0c675265-556b-4fc6-bc68-c9413aa40ff1",
+      "Flags": 0,
+      "Name": "Sprite (4)",
+      "Position": "441.2639,-1934.308,189.269",
+      "Rotation": "0.06662448,0.9532452,0.275869,-0.1038324",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "BatchedSpriteComponent",
+          "__guid": "327cb50e-e023-4245-99f3-2f3aca9f9a10",
+          "Alpha": 0.6999999,
+          "Billboard": "YOnly",
+          "NormalTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": true,
+              "NormalScale": 41.300003,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/d7901908d97a2eda.vtex"
+          },
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "SpriteTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": false,
+              "NormalScale": 1,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/4af825ff986992ef.vtex"
+          },
+          "Tinting": "1,1,1,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "ff413813-edc3-4912-b52c-0b3eda4f26d0",
+      "Flags": 0,
+      "Name": "Sprite (3)",
+      "Position": "1718.984,1637.408,-447.1216",
+      "Rotation": "0.06662448,0.9532452,0.275869,-0.1038324",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "BatchedSpriteComponent",
+          "__guid": "99b1008d-5adf-461a-b6db-4ab911f13271",
+          "Alpha": 0.6999999,
+          "Billboard": "YOnly",
+          "NormalTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": true,
+              "NormalScale": 41.300003,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/d7901908d97a2eda.vtex"
+          },
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "SpriteTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": false,
+              "NormalScale": 1,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/4af825ff986992ef.vtex"
+          },
+          "Tinting": "1,1,1,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "268b5f5c-5363-46d5-980a-d06ccf27da4f",
+      "Flags": 0,
+      "Name": "Sprite (5)",
+      "Position": "805.4178,30,300",
+      "Rotation": "0.06662448,0.9532452,0.275869,-0.1038324",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "BatchedSpriteComponent",
+          "__guid": "002d726c-85b8-41f2-8b28-9cc608b95e54",
+          "Alpha": 0.6999999,
+          "Billboard": "YOnly",
+          "NormalTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": true,
+              "NormalScale": 41.300003,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/d7901908d97a2eda.vtex"
+          },
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "SpriteTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": false,
+              "NormalScale": 1,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/4af825ff986992ef.vtex"
+          },
+          "Tinting": "1,1,1,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "2897d06e-d168-41d2-bc06-8bb345daae2a",
+      "Flags": 0,
+      "Name": "Sprite (1)",
+      "Position": "116.0026,-479.1484,-158.9959",
+      "Rotation": "0.06100352,0.9556195,0.2757681,-0.08379769",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "BatchedSpriteComponent",
+          "__guid": "7682b592-45e5-4c9c-8ecf-6b126167f21c",
+          "Alpha": 0.7,
+          "Billboard": "YOnly",
+          "NormalTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": true,
+              "NormalScale": 41.300003,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/d7901908d97a2eda.vtex"
+          },
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "SpriteTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": false,
+              "NormalScale": 1,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/4af825ff986992ef.vtex"
+          },
+          "Tinting": "1,1,1,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "4f13c22f-7408-48c7-9fac-baa4b27a2893",
+      "Flags": 0,
+      "Name": "Sprite (6)",
+      "Position": "-78.60349,-47.99991,130.2061",
+      "Rotation": "0.06100352,0.9556195,0.2757681,-0.08379769",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "BatchedSpriteComponent",
+          "__guid": "96d4a82e-face-4eff-bfb4-64b83e339535",
+          "Alpha": 0.7,
+          "Billboard": "YOnly",
+          "NormalTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": true,
+              "NormalScale": 41.300003,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/d7901908d97a2eda.vtex"
+          },
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "SpriteTexture": {
+            "$compiler": "texture",
+            "$source": "imagefile",
+            "data": {
+              "FilePath": "capture d’écran 2023-04-15 183017.png",
+              "MaxSize": 4096,
+              "ConvertHeightToNormals": false,
+              "NormalScale": 1,
+              "Rotate": 0,
+              "FlipVertical": false,
+              "FlipHorizontal": false,
+              "Padding": {
+                "Size": "0,0",
+                "EdgeSize": "0,0"
+              },
+              "Sharpen": 0,
+              "InvertColor": false,
+              "Blur": 0,
+              "Brightness": 1,
+              "Contrast": 1,
+              "Saturation": 1,
+              "Hue": 0,
+              "Colorize": false,
+              "TargetColor": "0,1,0,1",
+              "CacheToDisk": true
+            },
+            "compiled": "textures/generated/imagefile/4af825ff986992ef.vtex"
+          },
+          "Tinting": "1,1,1,1"
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "439c8bc7-b16f-47ad-9315-dc53d8b960e3",
+      "Flags": 0,
+      "Name": "Player Controller",
+      "Position": "-106.5364,-449.1126,0.00007397681",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.PlayerController",
+          "__guid": "54c1bfeb-f1fe-43be-a1ea-4798b76508ff",
+          "AccelerationTime": 0,
+          "AimStrengthBody": 1,
+          "AimStrengthEyes": 1,
+          "AimStrengthHead": 1,
+          "AirFriction": 0.1,
+          "AltMoveButton": "run",
+          "Body": {
+            "_type": "component",
+            "component_id": "cff58bdf-22e3-4ed4-9d99-bf11a85210c0",
+            "go": "439c8bc7-b16f-47ad-9315-dc53d8b960e3",
+            "component_type": "Rigidbody"
+          },
+          "BodyCollisionTags": null,
+          "BodyHeight": 72,
+          "BodyMass": 500,
+          "BodyRadius": 16,
+          "BrakePower": 1,
+          "CameraOffset": "256,0,12",
+          "ColliderObject": {
+            "_type": "gameobject",
+            "go": "2c689fe3-733b-482e-a80c-3f6ec58cc60b"
+          },
+          "DeaccelerationTime": 0,
+          "DuckedHeight": 36,
+          "DuckedSpeed": 70,
+          "EnableFootstepSounds": true,
+          "EnablePressing": true,
+          "EyeDistanceFromTop": 8,
+          "FootstepMixer": {
+            "Name": "unknown",
+            "Id": "00000000-0000-0000-0000-000000000000"
+          },
+          "FootstepVolume": 1,
+          "HideBodyInFirstPerson": true,
+          "JumpSpeed": 300,
+          "LookSensitivity": 1,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "PitchClamp": 90,
+          "ReachLength": 130,
+          "Renderer": {
+            "_type": "component",
+            "component_id": "2b160a3a-04b9-4cfd-9fe8-0cde2d6eb0d5",
+            "go": "5669b2a0-5a4e-477a-ba1c-31bb6a28bcc1",
+            "component_type": "SkinnedModelRenderer"
+          },
+          "RotateWithGround": true,
+          "RotationAngleLimit": 45,
+          "RotationSpeed": 1,
+          "RunByDefault": false,
+          "RunSpeed": 320,
+          "ShowColliderComponents": false,
+          "ShowRigidbodyComponent": false,
+          "ThirdPerson": true,
+          "ToggleCameraModeButton": "view",
+          "UseAnimatorControls": true,
+          "UseButton": "use",
+          "UseCameraControls": true,
+          "UseFovFromPreferences": true,
+          "UseInputControls": true,
+          "UseLookControls": true,
+          "WalkSpeed": 110
+        },
+        {
+          "__type": "Sandbox.Rigidbody",
+          "__guid": "cff58bdf-22e3-4ed4-9d99-bf11a85210c0",
+          "AngularDamping": 1,
+          "Gravity": true,
+          "LinearDamping": 0.1,
+          "Locking": {
+            "X": false,
+            "Y": false,
+            "Z": false,
+            "Pitch": true,
+            "Yaw": true,
+            "Roll": true
+          },
+          "MassCenterOverride": "0,0,36",
+          "MassOverride": 500,
+          "MotionEnabled": true,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "OverrideMassCenter": true,
+          "RigidbodyFlags": "DisableCollisionSounds",
+          "StartAsleep": false
+        },
+        {
+          "__type": "Sandbox.Movement.MoveModeWalk",
+          "__guid": "8c7bb38a-bb78-42bc-aecb-b9598efc5508",
+          "GroundAngle": 45,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Priority": 0,
+          "StepDownHeight": 18,
+          "StepUpHeight": 18
+        },
+        {
+          "__type": "Sandbox.Movement.MoveModeSwim",
+          "__guid": "ccd4e402-135f-4f61-9756-837804f36d82",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Priority": 10,
+          "SwimLevel": 0.7
+        },
+        {
+          "__type": "Sandbox.Movement.MoveModeLadder",
+          "__guid": "990bab10-0706-4342-b769-3ffec97b1891",
+          "ClimbableTags": "ladder",
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Priority": 5,
+          "Speed": 1
+        }
+      ],
+      "Children": [
+        {
+          "__guid": "5669b2a0-5a4e-477a-ba1c-31bb6a28bcc1",
+          "Flags": 0,
+          "Name": "Body",
+          "Enabled": true,
+          "Components": [
+            {
+              "__type": "Sandbox.SkinnedModelRenderer",
+              "__guid": "2b160a3a-04b9-4cfd-9fe8-0cde2d6eb0d5",
+              "AnimationGraph": null,
+              "BodyGroups": 341,
+              "BoneMergeTarget": null,
+              "CreateAttachments": false,
+              "CreateBoneObjects": false,
+              "MaterialGroup": null,
+              "MaterialOverride": null,
+              "Model": "models/citizen/citizen.vmdl",
+              "Morphs": {},
+              "OnComponentDestroy": null,
+              "OnComponentDisabled": null,
+              "OnComponentEnabled": null,
+              "OnComponentFixedUpdate": null,
+              "OnComponentStart": null,
+              "OnComponentUpdate": null,
+              "Parameters": {
+                "bools": {},
+                "ints": {},
+                "floats": {},
+                "vectors": {},
+                "rotations": {}
+              },
+              "PlaybackRate": 1,
+              "RenderOptions": {
+                "GameLayer": true,
+                "OverlayLayer": false,
+                "BloomLayer": false,
+                "AfterUILayer": false
+              },
+              "RenderType": "On",
+              "Sequence": {
+                "Name": null,
+                "Looping": true
+              },
+              "Tint": "1,1,1,1",
+              "UseAnimGraph": true
+            }
+          ],
+          "Children": []
+        },
+        {
+          "__guid": "2c689fe3-733b-482e-a80c-3f6ec58cc60b",
+          "Flags": 1,
+          "Name": "Colliders",
+          "Enabled": true,
+          "Components": [
+            {
+              "__type": "Sandbox.CapsuleCollider",
+              "__guid": "1161db26-53bd-4aa9-bfb1-8637c01c1eb4",
+              "End": "0,0,45.05097",
+              "Friction": 0,
+              "IsTrigger": false,
+              "OnComponentDestroy": null,
+              "OnComponentDisabled": null,
+              "OnComponentEnabled": null,
+              "OnComponentFixedUpdate": null,
+              "OnComponentStart": null,
+              "OnComponentUpdate": null,
+              "OnObjectTriggerEnter": null,
+              "OnObjectTriggerExit": null,
+              "OnTriggerEnter": null,
+              "OnTriggerExit": null,
+              "Radius": 11.313708,
+              "Start": "0,0,60.68629",
+              "Static": false,
+              "Surface": null,
+              "SurfaceVelocity": "0,0,0"
+            },
+            {
+              "__type": "Sandbox.BoxCollider",
+              "__guid": "57e56e18-0d78-4d95-be6e-51f43c9de56b",
+              "Center": "0,0,18",
+              "Friction": 0,
+              "IsTrigger": false,
+              "OnComponentDestroy": null,
+              "OnComponentDisabled": null,
+              "OnComponentEnabled": null,
+              "OnComponentFixedUpdate": null,
+              "OnComponentStart": null,
+              "OnComponentUpdate": null,
+              "OnObjectTriggerEnter": null,
+              "OnObjectTriggerExit": null,
+              "OnTriggerEnter": null,
+              "OnTriggerExit": null,
+              "Scale": "16,16,36",
+              "Static": false,
+              "Surface": null,
+              "SurfaceVelocity": "0,0,0"
+            }
+          ],
+          "Children": []
+        }
+      ]
+    },
+    {
+      "__guid": "a8059e55-0d13-4d35-9662-25ca89ffb913",
+      "Flags": 0,
+      "Name": "Terrain",
+      "Position": "-2525.078,-4748.685,0",
+      "Scale": "0.25,0.25,0.25",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.Terrain",
+          "__guid": "8c246a25-a13d-4c80-b609-8b66f7a15b27",
+          "__version": 1,
+          "ClipMapLodExtentTexels": 256,
+          "ClipMapLodLevels": 6,
+          "EnableCollision": true,
+          "Friction": null,
+          "IsTrigger": false,
+          "MaterialOverride": null,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "OnObjectTriggerEnter": null,
+          "OnObjectTriggerExit": null,
+          "OnTriggerEnter": null,
+          "OnTriggerExit": null,
+          "RenderType": "Off",
+          "Static": true,
+          "Storage": "untitled.terrain",
+          "Surface": null,
+          "SurfaceVelocity": "0,0,0",
+          "TerrainHeight": 10000,
+          "TerrainSize": 19968
+        }
+      ],
+      "Children": []
+    },
+    {
+      "__guid": "0e511154-42bb-4aeb-8d2a-451883ca1fba",
+      "Flags": 0,
+      "Name": "Sprite",
+      "Position": "640.9055,-780.9181,629.1867",
+      "Scale": "15.1,81.29997,1.399998",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.SpriteRenderer",
+          "__guid": "dd513b35-a9b7-4e2f-8e7e-11b8d15d2f85",
+          "Additive": false,
+          "CastShadows": true,
+          "Color": "0.31188,0.06176,0.06176,1",
+          "DepthFeather": 0,
+          "FlipHorizontal": false,
+          "FlipVertical": false,
+          "FogStrength": 1,
+          "Lighting": false,
+          "OnComponentDestroy": null,
+          "OnComponentDisabled": null,
+          "OnComponentEnabled": null,
+          "OnComponentFixedUpdate": null,
+          "OnComponentStart": null,
+          "OnComponentUpdate": null,
+          "Opaque": false,
+          "Pivot": "1,1",
+          "RenderOptions": {
+            "GameLayer": true,
+            "OverlayLayer": false,
+            "BloomLayer": false,
+            "AfterUILayer": false
+          },
+          "Size": "18.49999,10",
+          "Texture": "materials/particles/shapes/heart1.vtex"
+        }
+      ],
+      "Children": []
+    }
+  ],
+  "SceneProperties": {
+    "NetworkInterpolation": true,
+    "TimeScale": 1,
+    "WantsSystemScene": true,
+    "Metadata": {
+      "Title": "minimal"
+    },
+    "NavMesh": {
+      "Enabled": false,
+      "IncludeStaticBodies": true,
+      "IncludeKeyframedBodies": true,
+      "EditorAutoUpdate": true,
+      "AgentHeight": 64,
+      "AgentRadius": 16,
+      "AgentStepSize": 18,
+      "AgentMaxSlope": 40,
+      "ExcludedBodies": "",
+      "IncludedBodies": ""
+    }
+  },
+  "ResourceVersion": 2,
+  "Title": "minimal",
+  "Description": null,
+  "__references": [],
+  "__version": 2
+}
