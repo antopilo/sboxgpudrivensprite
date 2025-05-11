@@ -31,21 +31,6 @@ VS
 {
 	#include "common/vertex.hlsl"
 
-	bool IsSphereInsideFrustum(float4 planes[6], float3 center, float radius)
-	{
-		for (int i = 0; i < 6; ++i)
-		{
-			int planeDebugIndex = i;
-
-			float4 plane = planes[i];
-			float3 planeNormal = plane.xyz;
-			float d = dot(planeNormal, center) + plane.w - (radius * 2.0);
-			if (d > -radius) 
-				return false;
-		}
-		return true;
-	}
-
 	struct SpriteData
 	{
 		float4x4 Transform;
@@ -58,7 +43,25 @@ VS
 	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >; 
 	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >; 
 	StructuredBuffer<float> SortedSpriteDistances < Attribute("Distances"); >; 
-	StructuredBuffer<float4> CullingData < Attribute("CullingData"); >; 
+
+	float3 CamPosition < Attribute( "CamPosition" ); >;
+	float4x4 WorldToView < Attribute( "WorldToView" ); >;
+
+	float4x4 LookAtRH(float3 eye, float3 target, float3 up)
+	{
+		float3 zaxis = normalize(target - eye);        // Forward
+		float3 xaxis = normalize(cross(up, zaxis));    // Right
+		float3 yaxis = cross(zaxis, xaxis);            // Up
+
+		float4x4 view;
+
+		view[0] = float4(xaxis.x, yaxis.x, zaxis.x, 0.0f);
+		view[1] = float4(xaxis.y, yaxis.y, zaxis.y, 0.0f);
+		view[2] = float4(xaxis.z, yaxis.z, zaxis.z, 0.0f);
+		view[3] = float4(-dot(xaxis, eye), -dot(yaxis, eye), -dot(zaxis, eye), 1.0f);
+
+		return view;
+	}
 
 	PixelInput MainVs( VertexInput i)
 	{
@@ -71,12 +74,16 @@ VS
 		
 		if(SpriteDatas[spriteIndex].BillboardMode <= 1)
 		{
-			// TODO Lookat shadows
-		//#if !S_MODE_DEPTH
 			float3 spritePos = transpose(finalTransform)[3].xyz; 
-			
-		//#endif
-			float4x4 view = g_matWorldToView;  
+			float4x4 view = g_matWorldToView; 
+
+			// This is a hack to avoid self-shadowing sprites.
+			// Basically we still use a look at view matrix that looks at the camera
+			// and not the view matrix of the light. This ensures that shadows and geometry are
+			// still in "sync"
+			#if S_MODE_DEPTH
+			view = WorldToView;
+			#endif
 
 			if(SpriteDatas[spriteIndex].BillboardMode == 1)
 			{
@@ -96,26 +103,6 @@ VS
 			view[3] = float4(spritePos.xyz, 1.0);
 			view = transpose(view);
 
-			// Create Frustum
-			float4 planes[6];
-			planes[0] = CullingData[0];
-			planes[1] = CullingData[1];
-			planes[2] = CullingData[2];
-			planes[3] = CullingData[3];
-			planes[4] = CullingData[4];
-			planes[5] = CullingData[5];
-
-			float3 leftHandedPos = float3(spritePos.x, spritePos.y, spritePos.z);
-			bool isCulled = IsSphereInsideFrustum(planes, leftHandedPos.xyz, 200.0f);
-			if(!isCulled)
-			{
-				//ogDrawCall = 1;
-			}
-			else
-			{
-				//ogDrawCall = 0;
-			}
-
 			finalTransform = view;
 		}
 
@@ -134,12 +121,36 @@ PS
     #include "common/pixel.hlsl"
 
 	RenderState( CullMode, NONE );
-	RenderState( BlendEnable, false );
-	RenderState( AlphaToCoverageEnable, true );
+	RenderState( BlendEnable, true );
 	RenderState( AlphaToCoverageEnable, true );
 	RenderState( BlendOpAlpha, ADD);
+	RenderState( DepthWriteEnable, true );
+	#define S_TRANSLUCENT 1
 
-	#define S_TRANSLUCENT 0
+	#if ( D_BLEND == 1 ) 
+		RenderState( BlendEnable, true );
+		RenderState( SrcBlend, SRC_ALPHA );
+		RenderState( DstBlend, ONE );
+		RenderState( DepthWriteEnable, false );
+	#else 
+		RenderState( BlendEnable, true );
+		RenderState( SrcBlend, SRC_ALPHA );
+		RenderState( DstBlend, INV_SRC_ALPHA );
+		RenderState( BlendOp, ADD );
+		RenderState( SrcBlendAlpha, ONE );
+		RenderState( DstBlendAlpha, INV_SRC_ALPHA );
+		RenderState( BlendOpAlpha, ADD );
+	#endif
+
+	#if S_MODE_DEPTH == 0
+		RenderState( DepthWriteEnable, false );
+	#endif
+
+	#if D_OPAQUE == 1
+		RenderState( DepthWriteEnable, true );
+		RenderState( BlendEnable, false );
+	#endif
+
 
 	struct SpriteData
 	{
@@ -153,7 +164,6 @@ PS
 	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >;
 	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >;
 	StructuredBuffer<float> SortedSpriteDistances < Attribute("Distances"); >;
-	StructuredBuffer<float4> CullingData < Attribute("CullingData"); >;
 
 	float4 MainPs( PixelInput i ) : SV_Target0
 	{
@@ -167,9 +177,6 @@ PS
 		m.Albedo = ColorTexture.Sample( g_sPointWrap, i.vTextureCoords.xy ).rgb * tintColor.rgb;   
 		m.Normal = NormalTexture.Sample( g_sPointWrap, i.vTextureCoords.xy).rgb;
 		m.Opacity = tintColor.a; 
-
-		float debugCol = i.drawOrder / 19.0f;
-		m.Albedo.rgb = float3(debugCol, 0, 0);
 		m.Transmission = float3(tintColor.a, tintColor.a, tintColor.a);
 		return ShadingModelStandard::Shade( i, m );
 	}

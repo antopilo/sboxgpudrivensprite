@@ -7,8 +7,7 @@ public sealed class BatchedSpriteComponent : Renderer, Component.ExecuteInEditor
 	public enum BillboardMode
 	{ 
 		Always,
-		YOnly,
-		None,
+		YOnly
 	}
 
 	[Property]
@@ -32,8 +31,6 @@ public sealed class BatchedSpriteComponent : Renderer, Component.ExecuteInEditor
 	[Description( "Changes billboard behaviour" )]
 	public BillboardMode Billboard { get; set; }
 
-
-
 	protected override void OnPreRender()
 	{
 	}
@@ -46,6 +43,10 @@ public sealed class BatchedSpriteComponent : Renderer, Component.ExecuteInEditor
 	protected override void OnDisabled()
 	{
 		Scene.GetSystem<SpriteRendererSystem>().UnregisterSprite( this );
+	}
+
+	protected override void OnRefresh()
+	{
 	}
 
 	protected override void OnUpdate()

@@ -59,13 +59,13 @@ CS
 			float distanceA = DistanceBuffer[indexA];
 			float distanceB = DistanceBuffer[indexB];
 
-			bool ascending = (currentIndex / Block) % 2 == 0;
-    		float comparison = (distanceA - distanceB) * (ascending ? 1 : -1);
+			bool ascending = ( currentIndex & Dim ) == 0;
+			float comparison = ( distanceA - distanceB ) * ( ascending ? 1 : -1 );
 
 			if (comparison < 0)
 			{
-				SortBuffer[currentIndex] = currentIndex;
-				SortBuffer[compareIndex] = compareIndex;
+				SortBuffer[currentIndex] = indexB;
+				SortBuffer[compareIndex] = indexA;
 			}
 		}
 	}

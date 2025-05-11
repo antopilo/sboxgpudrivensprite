@@ -1,19 +1,30 @@
+MODES
+{
+	Default();
+}
+
 CS
 {
 	#include "system.fxc"
 
-	RWTexture2D<float4> Result < Attribute( "Result" ); >;
-
-	StructuredBuffer<float4> CullingPlanes < Attribute("CullingPlanes"); >; 
-
-	// Out
-	struct VisResult
+	struct SpriteData
 	{
-		int SpriteIndex;
-		bool Visible;
-	};
-	StructuredBuffer<VisResult> VisiblityResults < Attribute("VisiblityResults"); >;
-	bool IsSphereInsideFrustum(float4 planes[6], float3 center, float radius)
+		float4x4 Transform;
+		int ColorTextureIndex;
+		int NormalTextureIndex;
+		int BillboardMode;
+		float4 TintColor;
+	}; 
+	RWStructuredBuffer<SpriteData> AtomicBindlessSprites < Attribute( "AtomicBindlessSprites" ); >; // out
+	RWStructuredBuffer<SpriteData> Sprites < Attribute( "Sprites" ); >; // in
+
+	RWStructuredBuffer<uint> AtomicCounter < Attribute( "AtomicCounter" ); >; // push index
+	StructuredBuffer<uint> SortedIDs < Attribute( "SortedIDs" ); >;
+	StructuredBuffer<float4> CullingPlanes < Attribute("CullingPlanes"); >; // frustum plane
+
+	uint SpriteCount < Attribute( "SpriteCount" ); >;
+
+	bool IsSphereInsideFrustum(float3 center, float radius)
 	{
 		for (int i = 0; i < 6; ++i)
 		{
@@ -22,16 +33,29 @@ CS
 			float d = dot(planeNormal, center) + plane.w - (radius * 2.0);
 			if (d > -radius) 
 			{
-				return false;
+				return false; 
 			}
 		}
 		
 		return true;
 	}
 
-	[numthreads( 8, 8, 1 )]
+	[numthreads( 128, 1, 1 )] 
 	void MainCs( uint3 id : SV_DispatchThreadID )
-	{
-		Result[ id.xy ] = float4( id.x & id.y, ( id.x & 15 ) / 15.0, ( id.y & 15 ) / 15.0, 0.0 );
+	{	
+		uint currentIndex = id.x + id.y * 128;
+		if(currentIndex > SpriteCount)
+		{
+			return; 
+		}
+
+		int orderedIndex = SortedIDs[currentIndex - 1];
+		float3 spritePosition = transpose(Sprites[orderedIndex].Transform)[3].xyz;
+		if(IsSphereInsideFrustum(spritePosition, 200.0f))
+		{
+			uint index;
+    		InterlockedAdd(AtomicCounter[0], 1, index);
+			AtomicBindlessSprites[index] = Sprites[orderedIndex];
+		}
 	}	
 }
