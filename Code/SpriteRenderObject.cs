@@ -46,7 +46,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 	private SortMode RendererSortMode = SortMode.GPU;
 
 	// Max amount of rendered sprites
-	private const int MaxSprites = 50000;
+	private const int MaxSprites = 25000;
 
 	// Geometry stuff
 	public Material spriteMat;
@@ -227,55 +227,38 @@ public sealed class SpriteRenderObject : SceneCustomObject
 	{
 		base.RenderSceneObject();
 
-		List<SpriteData> bindlessSprites = new (sprites.Count);
 
 		Vector3 camPos = Vector3.Zero;
 		Frustum camFrustum;
 		if (Scene.IsEditor)
 		{
-			var camera = Scene.Camera;
+			// TODO: Find way of getting editors frustum...
 			camFrustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
 			camPos = Scene.Camera.WorldPosition;
 		}
 		else
 		{
-			var camera = Scene.Camera;
 			camFrustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
-			camPos = camera.WorldPosition;
+			camPos = Scene.Camera.WorldPosition;
 		}
 
-		// Push culling data, 6 frustum planes
+		// Upload frustum planes to GPU
+		Vector4[] planes =
 		{
-			var frustum = camFrustum;
-			if ( true ) // Frustum has changed
-			{
-				Vector4[] planes =
-				{
-					new(-frustum.LeftPlane.Normal,   frustum.LeftPlane.Distance),
-					new(-frustum.RightPlane.Normal,  frustum.RightPlane.Distance),
-					new(-frustum.TopPlane.Normal,    frustum.TopPlane.Distance),
-					new(-frustum.BottomPlane.Normal, frustum.BottomPlane.Distance),
-					new(-frustum.FarPlane.Normal,    frustum.FarPlane.Distance),
-					new(-frustum.NearPlane.Normal,   frustum.NearPlane.Distance),
-				};
-				Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
-				CullData.SetData<Vector4>( planes.ToArray() );
+			new(-camFrustum.LeftPlane.Normal,   camFrustum.LeftPlane.Distance),
+			new(-camFrustum.RightPlane.Normal,  camFrustum.RightPlane.Distance),
+			new(-camFrustum.TopPlane.Normal,    camFrustum.TopPlane.Distance),
+			new(-camFrustum.BottomPlane.Normal, camFrustum.BottomPlane.Distance),
+			new(-camFrustum.FarPlane.Normal,    camFrustum.FarPlane.Distance),
+			new(-camFrustum.NearPlane.Normal,   camFrustum.NearPlane.Distance),
+		};
+		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
+		CullData.SetData<Vector4>( planes.ToArray() );
 
-				camFrustum = frustum;
-			}
-		}
-
-		switch ( RendererSortMode )
+		if(RendererSortMode == SortMode.CPU)
 		{
-			case SortMode.GPU:
-				
-				break;
-			case SortMode.CPU:
-				sprites = sprites.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).ToList();
-				sprites.Reverse();
-				break;
-			case SortMode.None:
-				break; // Nothing
+			sprites = sprites.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).ToList();
+			sprites.Reverse();
 		}
 		
 		// This is not ideal, we would want to only push the deltas
@@ -294,46 +277,16 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			};
 		}
 
-		// If bindlessSprites is a List<SpriteData>, use:
-		bindlessSprites.Clear();
-		bindlessSprites.AddRange( bindlessSpriteArray );
-
-		//foreach ( var data in sprites )
-		//{
-		//	// Billboard rotation matrix: face the camera from sprite's world position
-		//	bindlessSprites.Add( new SpriteData()
-		//	{
-		//		Transform = Matrix4x4.CreateTranslation(data.WorldPosition),
-		//		ColorTextureIndex = data.SpriteTexture.IsValid() ? data.SpriteTexture.Index : -1,
-		//		NormalTextureIndex = data.NormalTexture.IsValid() ? data.NormalTexture.Index : -1,
-		//		TintColor = new Vector4(data.Tinting, data.Alpha),
-		//		BillboardMode = (int)data.Billboard,
-		//	} );
-		//}
-
 		// GPU sort
 		//UpdateBuffers();
 
-#if DEBUGCULL
-		foreach (var sprite in sprites)
-		{
-			GameTransform transform = sprite.Transform;
-			transform.Scale = 6.0f;
-		
-			Frustum frustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
-			frustum.IsInside( sprite.WorldPosition );
-		
-			if ( CullingUtils.IsSphereInsideFrustum( frustum, sprite.WorldPosition, 200.0f ))
-			{
-				Graphics.DrawModel( Model.Sphere, transform.World );
-			}
-		}
-#endif
-
-		gpuBuffer.SetData<SpriteData>( bindlessSprites.ToArray() );
+		gpuBuffer.SetData<SpriteData>( bindlessSpriteArray );
 		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
 
-		GPUSort( sprites.Select( c => Vector3.DistanceBetweenSquared( camPos, c.WorldPosition ) ).ToList() );
+		if ( RendererSortMode == SortMode.GPU )
+		{
+			GPUSort( sprites.Select( c => Vector3.DistanceBetweenSquared( camPos, c.WorldPosition ) ).ToList() );
+		}
 
 		// GPU Culling
 		{

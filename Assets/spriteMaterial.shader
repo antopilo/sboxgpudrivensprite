@@ -69,7 +69,7 @@ VS
 
 		// Extract sprite position from world transform
 		uint ogDrawCall = i.instanceID;
-		uint spriteIndex = ogDrawCall;
+		uint spriteIndex = SortedSpriteHandles[ogDrawCall];
 		float4x4 finalTransform = SpriteDatas[spriteIndex].Transform;
 		
 		if(SpriteDatas[spriteIndex].BillboardMode <= 1)
@@ -121,36 +121,8 @@ PS
     #include "common/pixel.hlsl"
 
 	RenderState( CullMode, NONE );
-	RenderState( BlendEnable, true );
-	RenderState( AlphaToCoverageEnable, true );
-	RenderState( BlendOpAlpha, ADD);
-	RenderState( DepthWriteEnable, true );
-	#define S_TRANSLUCENT 1
 
-	#if ( D_BLEND == 1 ) 
-		RenderState( BlendEnable, true );
-		RenderState( SrcBlend, SRC_ALPHA );
-		RenderState( DstBlend, ONE );
-		RenderState( DepthWriteEnable, false );
-	#else 
-		RenderState( BlendEnable, true );
-		RenderState( SrcBlend, SRC_ALPHA );
-		RenderState( DstBlend, INV_SRC_ALPHA );
-		RenderState( BlendOp, ADD );
-		RenderState( SrcBlendAlpha, ONE );
-		RenderState( DstBlendAlpha, INV_SRC_ALPHA );
-		RenderState( BlendOpAlpha, ADD );
-	#endif
-
-	#if S_MODE_DEPTH == 0
-		RenderState( DepthWriteEnable, false );
-	#endif
-
-	#if D_OPAQUE == 1
-		RenderState( DepthWriteEnable, true );
-		RenderState( BlendEnable, false );
-	#endif
-
+	RenderState (BlendEnable, true);
 
 	struct SpriteData
 	{
@@ -163,21 +135,24 @@ PS
 
 	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >;
 	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >;
-	StructuredBuffer<float> SortedSpriteDistances < Attribute("Distances"); >;
 
 	float4 MainPs( PixelInput i ) : SV_Target0
 	{
 		Material m = Material::From( i ); 
 		m.Metalness = 0.0f; // Forces the object to be metalic
-		Texture2D ColorTexture = Bindless::GetTexture2D( NonUniformResourceIndex(SpriteDatas[i.instanceID].ColorTextureIndex), true );
-		Texture2D NormalTexture = Bindless::GetTexture2D( NonUniformResourceIndex(SpriteDatas[i.instanceID].NormalTextureIndex), false );
+		uint spriteIndex = i.instanceID;
+		Texture2D ColorTexture = Bindless::GetTexture2D( NonUniformResourceIndex(SpriteDatas[spriteIndex].ColorTextureIndex), true );
+		Texture2D NormalTexture = Bindless::GetTexture2D( NonUniformResourceIndex(SpriteDatas[spriteIndex].NormalTextureIndex), false );
 		SamplerState MyPixelySampler < Filter( Point ); >;
 
-		float4 tintColor = SpriteDatas[i.instanceID].TintColor;
+		float4 tintColor = SpriteDatas[spriteIndex].TintColor;
 		m.Albedo = ColorTexture.Sample( g_sPointWrap, i.vTextureCoords.xy ).rgb * tintColor.rgb;   
 		m.Normal = NormalTexture.Sample( g_sPointWrap, i.vTextureCoords.xy).rgb;
-		m.Opacity = tintColor.a; 
-		m.Transmission = float3(tintColor.a, tintColor.a, tintColor.a);
+		//m.Opacity = tintColor.a; 
+
+		float debugDrawNum = i.drawOrder / 4.0f;
+		m.Albedo = float3(debugDrawNum, 0, 0);
+		m.Transmission = float3(m.Albedo);
 		return ShadingModelStandard::Shade( i, m );
 	}
 }

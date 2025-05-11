@@ -49,7 +49,7 @@ CS
 			return; 
 		}
 
-		int orderedIndex = SortedIDs[currentIndex - 1];
+		int orderedIndex = currentIndex;
 		float3 spritePosition = transpose(Sprites[orderedIndex].Transform)[3].xyz;
 		if(IsSphereInsideFrustum(spritePosition, 200.0f))
 		{
