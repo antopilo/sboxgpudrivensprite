@@ -427,7 +427,7 @@
       "__guid": "72f28b88-f3ee-4f8f-af60-15092465c666",
       "Flags": 0,
       "Name": "Transparency Test",
-      "Position": "-456.0897,-613.1154,213.8876",
+      "Position": "-456.0897,-613.1154,134.0391",
       "Enabled": true,
       "Components": [],
       "Children": [
@@ -442,7 +442,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "3b30bf0a-75b2-4358-89a2-a4e7c10009e6",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -528,7 +528,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "a3cd2a7d-97c4-4003-8963-a1142b252358",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -614,7 +614,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "70450dca-5094-4897-ae0c-5bab0f47d43a",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -700,7 +700,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "6ca055f8-88f6-48d8-97c9-978456713c15",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -786,7 +786,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "abb5cc2b-3b42-4973-9641-2af9facf7d50",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -867,7 +867,7 @@
       "__guid": "d9f44422-1a65-4982-a11b-272510dc0b95",
       "Flags": 0,
       "Name": "Transparency Test (1)",
-      "Position": "-651.7119,-613.1154,213.8876",
+      "Position": "-754.5098,-700.068,134.0391",
       "Enabled": true,
       "Components": [],
       "Children": [
@@ -882,7 +882,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "4df134e1-3933-4807-be3d-9b3108a94650",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -968,7 +968,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "997a2623-6fb5-4823-a8c6-26ba68a05ce4",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1054,7 +1054,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "fce305b7-1a8b-4868-851f-f50c578fe74a",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1140,7 +1140,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "b7ca3d2d-7845-4717-bfe2-690c411ab61c",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1226,7 +1226,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "be381e25-2547-4b44-a9f8-878dc999b7a6",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1307,7 +1307,7 @@
       "__guid": "472fd8c2-d1b6-4785-b834-17d31ca5a802",
       "Flags": 0,
       "Name": "Transparency Test (2)",
-      "Position": "-802.8069,-613.1154,213.8876",
+      "Position": "-894.6591,-695.9171,134.0392",
       "Enabled": true,
       "Components": [],
       "Children": [
@@ -1322,7 +1322,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "c5ebf431-cdcb-494d-8e58-26b3840d6726",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1408,7 +1408,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "af8af33c-1a1a-4e52-aa1d-95d5ef73b4fe",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1494,7 +1494,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "77b304c1-552b-4a14-acbb-7ccf223c7769",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1580,7 +1580,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "556c186c-751a-4bd5-bdb4-e322bc7a7b35",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1666,7 +1666,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "9d0bb438-21e0-4b47-8dd8-d21a29e63419",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1747,7 +1747,7 @@
       "__guid": "6e59c056-4f8c-4c75-a43b-633bc213bb71",
       "Flags": 0,
       "Name": "Transparency Test (3)",
-      "Position": "-931.8235,-613.1154,213.8876",
+      "Position": "-1008.658,-675.4493,134.039",
       "Enabled": true,
       "Components": [],
       "Children": [
@@ -1762,7 +1762,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "affa7504-aa47-4828-b428-4ca9efbba043",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1848,7 +1848,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "5042b0e4-f54a-4b1c-9c47-756e998654f3",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -1934,7 +1934,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "0ed7e0fe-f1a4-4cf2-b3a3-9a5399b955f7",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -2020,7 +2020,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "d6e2befd-a989-460c-ba3e-a45a6c3d0e60",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",
@@ -2106,7 +2106,7 @@
             {
               "__type": "BatchedSpriteComponent",
               "__guid": "06873f37-7421-4eac-b522-294b48b83c1d",
-              "Alpha": 1,
+              "Alpha": 0.5,
               "Billboard": "YOnly",
               "NormalTexture": {
                 "$compiler": "texture",

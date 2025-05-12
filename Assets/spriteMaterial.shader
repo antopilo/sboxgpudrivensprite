@@ -70,7 +70,7 @@ VS
 
 		// Extract sprite position from world transform
 		uint ogDrawCall = i.instanceID;
-		uint spriteIndex = SortedMapping[SortedSpriteHandles[ogDrawCall]];
+		uint spriteIndex = SortedMapping[i.instanceID];
 		float4x4 finalTransform = SpriteDatas[spriteIndex].Transform;
 		
 		if(SpriteDatas[spriteIndex].BillboardMode <= 1)
@@ -123,7 +123,8 @@ PS
 
 	RenderState( CullMode, NONE );
 
-	RenderState (BlendEnable, true);
+	RenderState ( BlendEnable, true);
+	RenderState ( BlendOp, ADD);
 
 	struct SpriteData
 	{
@@ -134,8 +135,12 @@ PS
 		float4 TintColor;
 	};
 
-	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >;
-	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >;
+	
+	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >; 
+	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >; 
+	StructuredBuffer<float> SortedSpriteDistances < Attribute("Distances"); >; 
+	StructuredBuffer<uint> SortedMapping < Attribute("sortedMapping"); >;
+
 
 	float4 MainPs( PixelInput i ) : SV_Target0
 	{
@@ -149,7 +154,7 @@ PS
 		float4 tintColor = SpriteDatas[spriteIndex].TintColor;
 		m.Albedo = ColorTexture.Sample( g_sPointWrap, i.vTextureCoords.xy ).rgb * tintColor.rgb;   
 		m.Normal = NormalTexture.Sample( g_sPointWrap, i.vTextureCoords.xy).rgb;
-		//m.Opacity = tintColor.a; 
+		m.Opacity = tintColor.a; 
 
 		float debugDrawNum = i.drawOrder / 4.0f;
 		m.Albedo = float3(debugDrawNum, 0, 0);

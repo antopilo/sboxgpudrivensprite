@@ -58,7 +58,7 @@ CS
 			uint index;
     		InterlockedAdd(AtomicCounter[0], 1, index);
 			AtomicBindlessSprites[index] = Sprites[orderedIndex];
-			CulledSortedMapping[index] = index;
+			CulledSortedMapping[orderedIndex] = index;
 		}
 	}	
 }
