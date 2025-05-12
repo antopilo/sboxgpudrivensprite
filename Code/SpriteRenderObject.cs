@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using static Sandbox.VertexLayout;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 // This is a sprite render object that will hold multiple instances of a sprite
 // And batch them
@@ -42,7 +43,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 
 	private Scene Scene;
 
-	private CullMethod RendererCullMethod = CullMethod.CPU;
+	private CullMethod RendererCullMethod = CullMethod.GPU;
 	private SortMode RendererSortMode = SortMode.GPU;
 
 	// Max amount of rendered sprites
@@ -73,7 +74,9 @@ public sealed class SpriteRenderObject : SceneCustomObject
 	public ComputeShader sphereCullShader;
 	private GpuBuffer atomicDispatchCounter;
 	private GpuBuffer atomicBindlessSprites;
+	private GpuBuffer sortedCulledMap;
 
+	private int spritesToRenderCount = 0;
 	public int InstanceCount => sprites.Count;
 
 	public SpriteRenderObject( SceneWorld world, Scene scene ) : base( world )
@@ -125,22 +128,8 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			atomicDispatchCounter = new GpuBuffer<uint>( 1, GpuBuffer.UsageFlags.Structured, "AtomicDispatchCounter" );
 			atomicBindlessSprites = new GpuBuffer<uint>( MaxSprites, GpuBuffer.UsageFlags.Structured, "AtomicBindlessSprites" );
 		}
-	}
 
-	private void UpdateBuffers()
-	{
-		var newSortCount = (1 << (int)Math.Ceiling( Math.Log2( Math.Max( 1, sprites.Count ) ) ));
-		if( newSortCount == SortCount )
-			return;
-
-		SortCount = newSortCount;
-
-		// Resize buffers
-		distancesBuffer?.Dispose();
-		distancesBuffer = new GpuBuffer<float>( SortCount, GpuBuffer.UsageFlags.Structured, "DistancesBuffer" );
-
-		IdBuffer?.Dispose();
-		IdBuffer = new GpuBuffer<uint>( SortCount, GpuBuffer.UsageFlags.Structured, "SortedBuffer" );
+		sortedCulledMap = new GpuBuffer<uint>(MaxSprites, GpuBuffer.UsageFlags.Structured, "SortedCulledMap" );
 	}
 
 	public void RegisterInstance( BatchedSpriteComponent sprite )
@@ -153,9 +142,8 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		sprites.RemoveAll( x => x == sprite );
 	}
 
-	private void GPUSort(List<float> distances)
+	private void ClearGPUSortBuffers()
 	{
-		// Clear
 		SortCount = (1 << (int)Math.Ceiling( Math.Log2( Math.Max( 1, sprites.Count ) ) ));
 		if ( SortCount > 2 )
 		{
@@ -169,7 +157,11 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 			Graphics.ResourceBarrierTransition( distancesBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 		}
+	}
 
+	private void GPUSort(List<float> distances)
+	{
+		// Clear
 		distancesBuffer.SetData<float>( distances.ToArray() );
 
 		// Sort
@@ -193,8 +185,6 @@ public sealed class SpriteRenderObject : SceneCustomObject
 				}
 			}
 		}
-
-		Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.GenericRead );
 
 		var data = new uint[SortCount];
 		IdBuffer.GetData<uint>( data );
@@ -222,11 +212,9 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), distString, Color.Blue );
 	}
 
-	private Frustum camFrustum;
 	public override void RenderSceneObject()
 	{
 		base.RenderSceneObject();
-
 
 		Vector3 camPos = Vector3.Zero;
 		Frustum camFrustum;
@@ -252,36 +240,45 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			new(-camFrustum.FarPlane.Normal,    camFrustum.FarPlane.Distance),
 			new(-camFrustum.NearPlane.Normal,   camFrustum.NearPlane.Distance),
 		};
-		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
 		CullData.SetData<Vector4>( planes.ToArray() );
+		Graphics.ResourceBarrierTransition( CullData, ResourceState.CopyDestination );
+		Graphics.ResourceBarrierTransition( CullData, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 
-		if(RendererSortMode == SortMode.CPU)
+		if (RendererSortMode == SortMode.CPU)
 		{
 			sprites = sprites.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).ToList();
 			sprites.Reverse();
 		}
-		
-		// This is not ideal, we would want to only push the deltas
-		var spriteCount = sprites.Count;
-		var bindlessSpriteArray = new SpriteData[spriteCount];
-		for ( int i = 0; i < spriteCount; i++ )
+
+		List<SpriteData> spritesToRender = new List<SpriteData>();
+		foreach( BatchedSpriteComponent sprite in sprites)
 		{
-			var data = sprites[i];
-			bindlessSpriteArray[i] = new SpriteData
+			//Vector3 spritePos = sprite.WorldPosition;
+			//if ( RendererCullMethod == CullMethod.CPU &&
+			//	!CullingUtils.IsSphereInsideFrustum( camFrustum, spritePos, 50.0f ) )
+			//{
+			//	//continue;
+			//}
+
+			spritesToRender.Add( new SpriteData
 			{
-				Transform = Matrix4x4.CreateTranslation( data.WorldPosition ),
-				ColorTextureIndex = data.SpriteTexture.IsValid() ? data.SpriteTexture.Index : -1,
-				NormalTextureIndex = data.NormalTexture.IsValid() ? data.NormalTexture.Index : -1,
-				TintColor = new Vector4( data.Tinting, data.Alpha ),
-				BillboardMode = (int)data.Billboard
-			};
+				Transform = Matrix4x4.CreateTranslation( sprite.WorldPosition ),
+				ColorTextureIndex = sprite.SpriteTexture.IsValid() ? sprite.SpriteTexture.Index : -1,
+				NormalTextureIndex = sprite.NormalTexture.IsValid() ? sprite.NormalTexture.Index : -1,
+				TintColor = new Vector4( sprite.Tinting, sprite.Alpha ),
+				BillboardMode = (int)sprite.Billboard
+			} );
 		}
+
+		spritesToRenderCount = spritesToRender.Count;
 
 		// GPU sort
 		//UpdateBuffers();
-
-		gpuBuffer.SetData<SpriteData>( bindlessSpriteArray );
+		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.CopyDestination );
+		gpuBuffer.SetData<SpriteData>( spritesToRender.ToArray() );
 		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
+
+		ClearGPUSortBuffers();
 
 		if ( RendererSortMode == SortMode.GPU )
 		{
@@ -291,22 +288,27 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		// GPU Culling
 		{
 			atomicDispatchCounter.SetData<uint>( new uint[1] { 0 } );
-			Graphics.ResourceBarrierTransition( atomicBindlessSprites, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-			Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-			Graphics.ResourceBarrierTransition( atomicDispatchCounter, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( sortedCulledMap, ResourceState.UnorderedAccess);
+			Graphics.ResourceBarrierTransition( atomicBindlessSprites, ResourceState.UnorderedAccess);
+			Graphics.ResourceBarrierTransition( atomicDispatchCounter, ResourceState.UnorderedAccess);
+
 			sphereCullShader.Attributes.Set( "AtomicCounter", atomicDispatchCounter );
 			sphereCullShader.Attributes.Set( "SortedIDs", IdBuffer );
 			sphereCullShader.Attributes.Set( "AtomicBindlessSprites", atomicBindlessSprites );
 			sphereCullShader.Attributes.Set( "Sprites", gpuBuffer );
 			sphereCullShader.Attributes.Set( "CullingPlanes", CullData );
-			sphereCullShader.Attributes.Set( "SpriteCount", sprites.Count );
+			sphereCullShader.Attributes.Set( "SpriteCount", spritesToRenderCount );
+			sphereCullShader.Attributes.Set( "SortedCulledMap", sortedCulledMap );
 
 			int threadGroupSize = 128;
-			int groupCount = (sprites.Count + threadGroupSize - 1) / threadGroupSize;
+			int groupCount = (spritesToRenderCount + threadGroupSize - 1) / threadGroupSize;
 			sphereCullShader.Dispatch( 1, groupCount, 1 );
 
+			Graphics.ResourceBarrierTransition( atomicBindlessSprites,ResourceState.GenericRead );
+			Graphics.ResourceBarrierTransition( atomicDispatchCounter, ResourceState.GenericRead );
+			Graphics.ResourceBarrierTransition( sortedCulledMap, ResourceState.GenericRead );
+			
 			// Debug dispatch count
-
 			var data = new uint[1];
 			atomicDispatchCounter.GetData<uint>( data );
 			
@@ -321,16 +323,15 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			computeShader.Attributes.Set( "IndirectDrawCountBuffer", indirectDrawCount );
 
 			computeShader.Dispatch( 1, 1, 1 );
-			Graphics.ResourceBarrierTransition( indirectDrawCount, ResourceState.UnorderedAccess, ResourceState.IndirectArgument );
+			Graphics.ResourceBarrierTransition( atomicDispatchCounter, ResourceState.IndirectArgument);
 		}
 
 		// Shade
 		{
-			Graphics.ResourceBarrierTransition( atomicBindlessSprites, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-			Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.GenericRead );
 			Graphics.Attributes.Set( "SortedBuffer", IdBuffer );
 			Graphics.Attributes.Set( "SpriteDatas", atomicBindlessSprites );
 			Graphics.Attributes.Set( "CamPosition", Scene.Camera.WorldPosition );
+			Graphics.Attributes.Set( "SortedCulledMap", sortedCulledMap );
 
 			Vector3 pitchYawRoll = Scene.Camera.Transform.Rotation.Angles().AsVector3();
 			pitchYawRoll.y = 90 - pitchYawRoll.y;
@@ -339,6 +340,10 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			Vector3 anglesRad = ((float)Math.PI / 180.0f) * pitchYawRoll;
 			Matrix4x4 view = Matrix4x4.CreateFromYawPitchRoll( anglesRad.z, anglesRad.x, anglesRad.y );
 			Graphics.Attributes.Set( "WorldToView", view );
+
+			Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( atomicBindlessSprites, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( sortedCulledMap, ResourceState.UnorderedAccess );
 			Graphics.DrawModelInstancedIndirect( spriteModel, indirectDrawCount );
 		}
 	}

@@ -43,6 +43,7 @@ VS
 	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >; 
 	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >; 
 	StructuredBuffer<float> SortedSpriteDistances < Attribute("Distances"); >; 
+	StructuredBuffer<uint> SortedCulledMap < Attribute( "SortedCulledMap" ); >; // mapping for sorted culled
 
 	float3 CamPosition < Attribute( "CamPosition" ); >;
 	float4x4 WorldToView < Attribute( "WorldToView" ); >;
@@ -68,7 +69,7 @@ VS
 		PixelInput o = ProcessVertex( i ); 
 
 		// Extract sprite position from world transform
-		uint ogDrawCall = i.instanceID;
+		uint ogDrawCall = SortedCulledMap[i.instanceID];
 		uint spriteIndex = SortedSpriteHandles[ogDrawCall];
 		float4x4 finalTransform = SpriteDatas[spriteIndex].Transform;
 		
@@ -85,7 +86,7 @@ VS
 			view = WorldToView;
 			#endif
 
-			if(SpriteDatas[spriteIndex].BillboardMode == 1)
+			if(SpriteDatas[spriteIndex].BillboardMode == 1) 
 			{
 				// To lock the Z rotation axis: flatten the forward direction on the X & Y axis
 				float3 camRight = view[0].xyz;
@@ -130,28 +131,29 @@ PS
 		int ColorTextureIndex;
 		int NormalTextureIndex;
 		int BillboardMode;
+		float2 SpriteSize;
 		float4 TintColor;
 	};
 
 	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >;
-	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >;
 
 	float4 MainPs( PixelInput i ) : SV_Target0
 	{
 		Material m = Material::From( i ); 
-		m.Metalness = 0.0f; // Forces the object to be metalic
 		uint spriteIndex = i.instanceID;
-		Texture2D ColorTexture = Bindless::GetTexture2D( NonUniformResourceIndex(SpriteDatas[spriteIndex].ColorTextureIndex), true );
-		Texture2D NormalTexture = Bindless::GetTexture2D( NonUniformResourceIndex(SpriteDatas[spriteIndex].NormalTextureIndex), false );
+		SpriteData sprite = SpriteDatas[spriteIndex];
+		Texture2D ColorTexture = Bindless::GetTexture2D( NonUniformResourceIndex(sprite.ColorTextureIndex), true );
+		Texture2D NormalTexture = Bindless::GetTexture2D( NonUniformResourceIndex(sprite.NormalTextureIndex), false );
 		SamplerState MyPixelySampler < Filter( Point ); >;
 
-		float4 tintColor = SpriteDatas[spriteIndex].TintColor;
+		float4 tintColor = sprite.TintColor;
 		m.Albedo = ColorTexture.Sample( g_sPointWrap, i.vTextureCoords.xy ).rgb * tintColor.rgb;   
 		m.Normal = NormalTexture.Sample( g_sPointWrap, i.vTextureCoords.xy).rgb;
-		//m.Opacity = tintColor.a; 
+		m.Opacity = tintColor.a; 
 
-		float debugDrawNum = i.drawOrder / 4.0f;
-		m.Albedo = float3(debugDrawNum, 0, 0);
+		// To Debug ordering and display draw order from black to red
+		// float debugDrawNum = i.drawOrder / 4.0f;
+		// m.Albedo = float3(debugDrawNum, 0, 0);
 		m.Transmission = float3(m.Albedo);
 		return ShadingModelStandard::Shade( i, m );
 	}

@@ -19,12 +19,12 @@ CS
 	RWStructuredBuffer<SpriteData> Sprites < Attribute( "Sprites" ); >; // in
 
 	RWStructuredBuffer<uint> AtomicCounter < Attribute( "AtomicCounter" ); >; // push index
+	RWStructuredBuffer<uint> SortedCulledMap < Attribute( "SortedCulledMap" ); >; // mapping for sorted culled
 	StructuredBuffer<uint> SortedIDs < Attribute( "SortedIDs" ); >;
 	StructuredBuffer<float4> CullingPlanes < Attribute("CullingPlanes"); >; // frustum plane
-
 	uint SpriteCount < Attribute( "SpriteCount" ); >;
 
-	bool IsSphereInsideFrustum(float3 center, float radius)
+	bool IsSphereInsideFrustum(float3 center, float radius) 
 	{
 		for (int i = 0; i < 6; ++i)
 		{
@@ -49,13 +49,14 @@ CS
 			return; 
 		}
 
-		int orderedIndex = currentIndex;
-		float3 spritePosition = transpose(Sprites[orderedIndex].Transform)[3].xyz;
-		if(IsSphereInsideFrustum(spritePosition, 200.0f))
+		SpriteData sprite = Sprites[currentIndex];
+		float3 spritePosition = transpose(sprite.Transform)[3].xyz;
+		if(true || IsSphereInsideFrustum(spritePosition, 600.0f))
 		{
 			uint index;
     		InterlockedAdd(AtomicCounter[0], 1, index);
-			AtomicBindlessSprites[index] = Sprites[orderedIndex];
+			AtomicBindlessSprites[index] = Sprites[currentIndex];
+			SortedCulledMap[index] = currentIndex;
 		}
 	}	
 }
