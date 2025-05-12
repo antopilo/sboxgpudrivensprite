@@ -21,6 +21,8 @@ CS
 	RWStructuredBuffer<uint> AtomicCounter < Attribute( "AtomicCounter" ); >; // push index
 	StructuredBuffer<uint> SortedIDs < Attribute( "SortedIDs" ); >;
 	StructuredBuffer<float4> CullingPlanes < Attribute("CullingPlanes"); >; // frustum plane
+	RWStructuredBuffer<uint> CulledSortedMapping < Attribute("culledSortedMapping"); >;
+	RWStructuredBuffer<uint> SortedMapping < Attribute("sortedMapping"); >;
 
 	uint SpriteCount < Attribute( "SpriteCount" ); >;
 
@@ -56,6 +58,7 @@ CS
 			uint index;
     		InterlockedAdd(AtomicCounter[0], 1, index);
 			AtomicBindlessSprites[index] = Sprites[orderedIndex];
+			CulledSortedMapping[index] = index;
 		}
 	}	
 }

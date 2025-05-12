@@ -43,6 +43,7 @@ VS
 	StructuredBuffer<SpriteData> SpriteDatas < Attribute("SpriteDatas"); >; 
 	StructuredBuffer<uint> SortedSpriteHandles < Attribute("SortedBuffer"); >; 
 	StructuredBuffer<float> SortedSpriteDistances < Attribute("Distances"); >; 
+	StructuredBuffer<uint> SortedMapping < Attribute("sortedMapping"); >;
 
 	float3 CamPosition < Attribute( "CamPosition" ); >;
 	float4x4 WorldToView < Attribute( "WorldToView" ); >;
@@ -69,7 +70,7 @@ VS
 
 		// Extract sprite position from world transform
 		uint ogDrawCall = i.instanceID;
-		uint spriteIndex = SortedSpriteHandles[ogDrawCall];
+		uint spriteIndex = SortedMapping[SortedSpriteHandles[ogDrawCall]];
 		float4x4 finalTransform = SpriteDatas[spriteIndex].Transform;
 		
 		if(SpriteDatas[spriteIndex].BillboardMode <= 1)
