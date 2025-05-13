@@ -81,6 +81,31 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		Scene = scene;
 	}
 
+	// Forewords
+	// I initially started using the Command API because that's what made the most
+	// sense to me. Then I realized it wasn't quite where it should be for me to pull 
+	// this off(E.g you can only hook after the depth prepass making shadows awkward)
+	//
+	// I then looked into the assembly of how other features were made, using custom scene object
+	// Seemed way more flexible atm rendering wise - so I went with that...
+	// This was my first time doing graphics work in s&box and I was suprised by the iteration time.
+	// I lost my device a couple times, but i was able to find it back. :)
+	// Started on Friday night, and finished on Sunday night. I had a blast doing this.
+
+	// Things I would improve
+	// - Only upload the deltas of the bindless sprites when added/removed
+	// - Separate transforms into another bindless buffers for easier uploading bandwidth wise
+	// - Do separate passes for opaque and transparent sprites(Front to back, back to front sorting)
+	// - Generate mesh in vertex shader, no need for an index buffer these days
+	// - Hook into the OnRefresh of components and only upload the deltas
+	// - Make GPU frustum culling & GPU sorting play nicely together
+	// - Move sorting *after* culling stage
+	// - Consider shadow views for Frustum culling by extracting frustum planes directly in the shader
+	// - Consolidate passes to avoid useless pipelines stall
+	// - ALSO using the command API
+	// - Dynamic resizing of the buffers, similar to the OG sprite renderer, but this is a codetest afterall.
+
+
 	public void InitMesh()
 	{
 		Flags.CastShadows = true;
@@ -183,8 +208,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 
 		Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.GenericRead );
 
-		// Debuggin GPU sorting, works well by itself, just need to make it work nicely with culling
-		// WIP
+		// Debugging GPU sorting, works well by itself, just need to make it work nicely with culling
 		var data = new uint[SortCount];
 		IdBuffer.GetData<uint>( data );
 

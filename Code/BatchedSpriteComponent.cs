@@ -2,6 +2,10 @@ using Sandbox;
 using Sandbox.Internal;
 using Sandbox.Rendering;
 
+[Title( "GPU Sprite Renderer" )]
+[Category( "Rendering" )]
+[Icon( "favorite" )]
+[Description( "GPU Driven Sprite Rendering" )]
 public sealed class BatchedSpriteComponent : Renderer, Component.ExecuteInEditor
 {
 	public enum BillboardMode
@@ -11,7 +15,6 @@ public sealed class BatchedSpriteComponent : Renderer, Component.ExecuteInEditor
 		None
 	}
 
-	[Property]
 	[Description( "Sprite Texture" )]
 	public Texture SpriteTexture { get; set; }
 
