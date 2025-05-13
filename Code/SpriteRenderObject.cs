@@ -342,6 +342,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		}
 	}
 
+	// TODO: make sorting work nicely with culling
 	private void Sorted()
 	{
 		Vector3 camPos = Vector3.Zero;

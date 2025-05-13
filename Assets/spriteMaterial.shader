@@ -139,9 +139,9 @@ PS
 
 	RenderState( CullMode, NONE );
 
-	RenderState ( BlendEnable, false);
-	RenderState (AlphaToCoverageEnable, true);
-	RenderState( BlendOpAlpha, ADD);
+	RenderState ( BlendEnable, true);
+	RenderState( AlphaToCoverageEnable, true ); 
+	BoolAttribute( translucent, true )
 
 	struct SpriteData
 	{
@@ -177,7 +177,7 @@ PS
 		//	 m.Albedo = float3(debugDrawNum, 0, 0);
 		// }
 
-		m.Transmission = float3(m.Albedo);
+		m.Transmission = float3(0.5, 0.5, 0.5);
 		return ShadingModelStandard::Shade( i, m );
 	}
 }
