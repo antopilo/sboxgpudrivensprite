@@ -42,7 +42,6 @@ public sealed class SpriteRenderObject : SceneCustomObject
 
 	private Scene Scene;
 
-	private CullMethod RendererCullMethod = CullMethod.CPU;
 	private SortMode RendererSortMode = SortMode.GPU;
 
 	// Max amount of rendered sprites
@@ -89,6 +88,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		Flags.IsTranslucent = true;
 
 		// Create sprite mesh
+		// TODO; Should move directly in vertex shader or compute
 		{
 			spriteMesh = new Mesh( spriteMat );
 			const float spriteSize = 50f;
@@ -130,22 +130,6 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		culledSortedMapping = new GpuBuffer<uint>(MaxSprites, GpuBuffer.UsageFlags.Structured, "CulledSortedMapping" );
 	}
 
-	private void UpdateBuffers()
-	{
-		var newSortCount = (1 << (int)Math.Ceiling( Math.Log2( Math.Max( 1, sprites.Count ) ) ));
-		if( newSortCount == SortCount )
-			return;
-
-		SortCount = newSortCount;
-
-		// Resize buffers
-		distancesBuffer?.Dispose();
-		distancesBuffer = new GpuBuffer<float>( SortCount, GpuBuffer.UsageFlags.Structured, "DistancesBuffer" );
-
-		IdBuffer?.Dispose();
-		IdBuffer = new GpuBuffer<uint>( SortCount, GpuBuffer.UsageFlags.Structured, "SortedBuffer" );
-	}
-
 	public void RegisterInstance( BatchedSpriteComponent sprite )
 	{
 		sprites.Add( sprite );
@@ -156,10 +140,10 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		sprites.RemoveAll( x => x == sprite );
 	}
 
-	private void GPUSort(List<float> distances)
+	private void GPUSort(List<float> distances, bool opaque)
 	{
 		// Clear
-		SortCount = (1 << (int)Math.Ceiling( Math.Log2( Math.Max( 1, sprites.Count ) ) ));
+		SortCount = (1 << (int)Math.Ceiling( Math.Log2( Math.Max( 1, distances.Count ) ) ));
 		if ( SortCount > 2 )
 		{
 			bitonicShader.Attributes.Set( "D_CLEAR", 1 );
@@ -176,12 +160,12 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		distancesBuffer.SetData<float>( distances.ToArray() );
 
 		// Sort
-		if ( SortCount > 2 )
+		if ( !opaque && SortCount > 2 )
 		{
 			bitonicShader.Attributes.Set( "D_CLEAR", 0 );
 			bitonicShader.Attributes.Set( "SortBuffer", IdBuffer );
 			bitonicShader.Attributes.Set( "DistanceBuffer", distancesBuffer );
-			bitonicShader.Attributes.Set( "Count", sprites.Count );
+			bitonicShader.Attributes.Set( "Count", SortCount);
 
 			int threadsX = Math.Min( SortCount, 262144 );
 			int threadsY = (SortCount + 262144 - 1) / 262144;
@@ -199,6 +183,8 @@ public sealed class SpriteRenderObject : SceneCustomObject
 
 		Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.GenericRead );
 
+		// Debuggin GPU sorting, works well by itself, just need to make it work nicely with culling
+		// WIP
 		var data = new uint[SortCount];
 		IdBuffer.GetData<uint>( data );
 
@@ -225,17 +211,13 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		Graphics.DrawText( new Rect( xPos, 200, 100, 50 ), distString, Color.Blue );
 	}
 
-	private Frustum camFrustum;
-	public override void RenderSceneObject()
+	private void CulledSolid()
 	{
-		base.RenderSceneObject();
-
-
 		Vector3 camPos = Vector3.Zero;
 		Frustum camFrustum;
-		if (Scene.IsEditor)
+		if ( Scene.IsEditor )
 		{
-			// TODO: Find way of getting editors frustum...
+			// TODO: Find way of getting editors frustum. Leaving this as is since Gizmo.Camera doesnt work properly
 			camFrustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
 			camPos = Scene.Camera.WorldPosition;
 		}
@@ -245,7 +227,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			camPos = Scene.Camera.WorldPosition;
 		}
 
-		// Upload frustum planes to GPU
+		// Upload frustum planes to GPU for sphere bound culling
 		Vector4[] planes =
 		{
 			new(-camFrustum.LeftPlane.Normal,   camFrustum.LeftPlane.Distance),
@@ -258,12 +240,13 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
 		CullData.SetData<Vector4>( planes.ToArray() );
 
-		if(RendererSortMode == SortMode.CPU)
+		// In case we want to do sorting on the CPU since GPU is WIP
+		if ( RendererSortMode == SortMode.CPU )
 		{
 			sprites = sprites.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).ToList();
 			sprites.Reverse();
 		}
-		
+
 		// This is not ideal, we would want to only push the deltas
 		var spriteCount = sprites.Count;
 		var bindlessSpriteArray = new SpriteData[spriteCount];
@@ -271,17 +254,134 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		for ( int i = 0; i < spriteCount; i++ )
 		{
 			var data = sprites[i];
-
-
-			bindlessSpriteArray[i] = new SpriteData
 			{
-				Transform = Matrix4x4.CreateTranslation( data.WorldPosition ),
-				ColorTextureIndex = data.SpriteTexture.IsValid() ? data.SpriteTexture.Index : -1,
-				NormalTextureIndex = data.NormalTexture.IsValid() ? data.NormalTexture.Index : -1,
-				TintColor = new Vector4( data.Tinting, data.Alpha ),
-				BillboardMode = (int)data.Billboard
-			};
-			
+				Matrix4x4 spriteTransform = Matrix4x4.Identity;
+				spriteTransform *= Matrix4x4.CreateScale( data.WorldScale );
+
+				spriteTransform *= Matrix4x4.CreateFromYawPitchRoll( 
+					MathX.DegreeToRadian(data.WorldRotation.Pitch()),
+					MathX.DegreeToRadian( data.WorldRotation.Yaw() ),
+					MathX.DegreeToRadian( data.WorldRotation.Roll() )
+				);
+
+				spriteTransform *= Matrix4x4.CreateTranslation( data.WorldPosition );
+				bindlessSpriteArray[i] = new SpriteData
+				{
+					Transform = spriteTransform,
+					ColorTextureIndex = data.SpriteTexture.IsValid() ? data.SpriteTexture.Index : -1,
+					NormalTextureIndex = data.NormalTexture.IsValid() ? data.NormalTexture.Index : -1,
+					TintColor = new Vector4( data.Tinting, data.Alpha ),
+					BillboardMode = (int)data.Billboard
+				};
+			}
+		}
+		gpuBuffer.SetData<SpriteData>( bindlessSpriteArray );
+		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
+
+		// TODO: Should sort after culling & only transparent materials.
+		// GPUSort( sprites.Select( c => Vector3.DistanceBetweenSquared( camPos, c.WorldPosition ) ).ToList(), true );
+
+		// GPU Frustum Culling(Sphere test)
+		{
+			atomicDispatchCounter.SetData<uint>( new uint[1] { 0 } );
+			Graphics.ResourceBarrierTransition( atomicBindlessSprites, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( atomicDispatchCounter, ResourceState.UnorderedAccess );
+			sphereCullShader.Attributes.Set( "CulledSortedMapping", culledSortedMapping );
+			sphereCullShader.Attributes.Set( "AtomicCounter", atomicDispatchCounter );
+			sphereCullShader.Attributes.Set( "AtomicBindlessSprites", atomicBindlessSprites );
+			sphereCullShader.Attributes.Set( "Sprites", gpuBuffer );
+			sphereCullShader.Attributes.Set( "CullingPlanes", CullData );
+			sphereCullShader.Attributes.Set( "sortedMapping", IdBuffer );
+			sphereCullShader.Attributes.Set( "SpriteCount", sprites.Count );
+			sphereCullShader.Attributes.Set( "Opaque", 1);
+
+			int threadGroupSize = 128;
+			int groupCount = (sprites.Count + threadGroupSize - 1) / threadGroupSize;
+			sphereCullShader.Dispatch( 1, groupCount, 1 );
+
+
+			// Debug dispatch counter
+			var data = new uint[1];
+			atomicDispatchCounter.GetData<uint>( data );
+			Graphics.DrawText( new Rect( 100, 0, 50, 50 ), "Dispatch Counter: " + data[0].ToString(), Color.Red );
+		}
+
+		// GPU Driven Indirect Draw
+		{
+			Graphics.ResourceBarrierTransition( atomicDispatchCounter, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( indirectDrawCount, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			computeShader.Attributes.Set( "IndirectDrawCount", atomicDispatchCounter );
+			computeShader.Attributes.Set( "IndirectDrawCountBuffer", indirectDrawCount );
+
+			// Not ideal, should pipe straight from culling stage
+			computeShader.Dispatch( 1, 1, 1 );
+			Graphics.ResourceBarrierTransition( indirectDrawCount, ResourceState.UnorderedAccess, ResourceState.IndirectArgument );
+		}
+
+		// Shade
+		{
+			Graphics.ResourceBarrierTransition( atomicBindlessSprites, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
+			Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.GenericRead );
+			Graphics.Attributes.Set( "SortedBuffer", IdBuffer );
+			Graphics.Attributes.Set( "SpriteDatas", atomicBindlessSprites );
+			Graphics.Attributes.Set( "CamPosition", Scene.Camera.WorldPosition );
+			Graphics.Attributes.Set( "SortedMapping", culledSortedMapping );
+			Graphics.Attributes.Set( "Opaque", 1 );
+
+			// Build look at matrix to fix self-shadowing
+			Vector3 pitchYawRoll = Scene.Camera.Transform.Rotation.Angles().AsVector3();
+			pitchYawRoll.y = 90 - pitchYawRoll.y;
+			pitchYawRoll.x = 90 + pitchYawRoll.x;
+			pitchYawRoll.z = pitchYawRoll.z;
+			Vector3 anglesRad = ((float)Math.PI / 180.0f) * pitchYawRoll;
+			Matrix4x4 view = Matrix4x4.CreateFromYawPitchRoll( anglesRad.z, anglesRad.x, anglesRad.y );
+			Graphics.Attributes.Set( "WorldToView", view );
+
+			Graphics.DrawModelInstancedIndirect( spriteModel, indirectDrawCount );
+		}
+	}
+
+	private void Sorted()
+	{
+		Vector3 camPos = Vector3.Zero;
+		Frustum camFrustum;
+		if ( Scene.IsEditor )
+		{
+			// TODO: Find way of getting editors frustum...
+			camFrustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
+			camPos = Scene.Camera.WorldPosition;
+		}
+		else
+		{
+			camFrustum = Scene.Camera.GetFrustum( Scene.Camera.ScreenRect );
+			camPos = Scene.Camera.WorldPosition;
+		}
+
+		if ( RendererSortMode == SortMode.CPU )
+		{
+			sprites = sprites.OrderBy( s => Vector3.DistanceBetweenSquared( camPos, s.WorldPosition ) ).ToList();
+			sprites.Reverse();
+		}
+
+		// This is not ideal, we would want to only push the deltas
+		var spriteCount = sprites.Count;
+		var bindlessSpriteArray = new SpriteData[spriteCount];
+		var sortedSpriteArray = new SpriteData[spriteCount];
+		for ( int i = 0; i < spriteCount; i++ )
+		{
+			var data = sprites[i];
+			if ( data.Alpha < 1.0f )
+			{
+				bindlessSpriteArray[i] = new SpriteData
+				{
+					Transform = Matrix4x4.CreateTranslation( data.WorldPosition ),
+					ColorTextureIndex = data.SpriteTexture.IsValid() ? data.SpriteTexture.Index : -1,
+					NormalTextureIndex = data.NormalTexture.IsValid() ? data.NormalTexture.Index : -1,
+					TintColor = new Vector4( data.Tinting, data.Alpha ),
+					BillboardMode = (int)data.Billboard
+				};
+			}
 		}
 
 		// GPU sort
@@ -290,10 +390,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		gpuBuffer.SetData<SpriteData>( bindlessSpriteArray );
 		Graphics.ResourceBarrierTransition( gpuBuffer, ResourceState.UnorderedAccess );
 
-		if ( RendererSortMode == SortMode.GPU )
-		{
-			GPUSort( sprites.Select( c => Vector3.DistanceBetweenSquared( camPos, c.WorldPosition ) ).ToList() );
-		}
+		GPUSort( sprites.Select( c => Vector3.DistanceBetweenSquared( camPos, c.WorldPosition ) ).ToList(), false );
 
 		// GPU Culling
 		{
@@ -308,6 +405,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			sphereCullShader.Attributes.Set( "CullingPlanes", CullData );
 			sphereCullShader.Attributes.Set( "sortedMapping", IdBuffer );
 			sphereCullShader.Attributes.Set( "SpriteCount", sprites.Count );
+			sphereCullShader.Attributes.Set( "Opaque", 0 );
 
 			int threadGroupSize = 128;
 			int groupCount = (sprites.Count + threadGroupSize - 1) / threadGroupSize;
@@ -315,7 +413,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 
 			var data = new uint[1];
 			atomicDispatchCounter.GetData<uint>( data );
-			
+
 			Graphics.DrawText( new Rect( 100, 0, 50, 50 ), "Dispatch Counter: " + data[0].ToString(), Color.Red );
 		}
 
@@ -323,7 +421,7 @@ public sealed class SpriteRenderObject : SceneCustomObject
 		{
 			Graphics.ResourceBarrierTransition( atomicDispatchCounter, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 			Graphics.ResourceBarrierTransition( indirectDrawCount, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
-			computeShader.Attributes.Set( "IndirectDrawCount", atomicDispatchCounter ); 
+			computeShader.Attributes.Set( "IndirectDrawCount", atomicDispatchCounter );
 			computeShader.Attributes.Set( "IndirectDrawCountBuffer", indirectDrawCount );
 
 			computeShader.Dispatch( 1, 1, 1 );
@@ -335,9 +433,10 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			Graphics.ResourceBarrierTransition( atomicBindlessSprites, ResourceState.UnorderedAccess, ResourceState.UnorderedAccess );
 			Graphics.ResourceBarrierTransition( IdBuffer, ResourceState.UnorderedAccess, ResourceState.GenericRead );
 			Graphics.Attributes.Set( "SortedBuffer", IdBuffer );
-			Graphics.Attributes.Set( "SpriteDatas", atomicBindlessSprites );
+			Graphics.Attributes.Set( "SpriteDatas", gpuBuffer );
 			Graphics.Attributes.Set( "CamPosition", Scene.Camera.WorldPosition );
 			Graphics.Attributes.Set( "SortedMapping", culledSortedMapping );
+			Graphics.Attributes.Set( "Opaque", 0 );
 
 			Vector3 pitchYawRoll = Scene.Camera.Transform.Rotation.Angles().AsVector3();
 			pitchYawRoll.y = 90 - pitchYawRoll.y;
@@ -348,5 +447,16 @@ public sealed class SpriteRenderObject : SceneCustomObject
 			Graphics.Attributes.Set( "WorldToView", view );
 			Graphics.DrawModelInstancedIndirect( spriteModel, indirectDrawCount );
 		}
+	}
+
+
+	public override void RenderSceneObject()
+	{
+		base.RenderSceneObject();
+
+		CulledSolid();
+
+		// TODO: make sorting + culling play nicely
+		// Sorted();
 	}
 }

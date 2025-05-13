@@ -7,7 +7,8 @@ public sealed class BatchedSpriteComponent : Renderer, Component.ExecuteInEditor
 	public enum BillboardMode
 	{ 
 		Always,
-		YOnly
+		YOnly,
+		None
 	}
 
 	[Property]
@@ -23,9 +24,9 @@ public sealed class BatchedSpriteComponent : Renderer, Component.ExecuteInEditor
 	public Color Tinting { get; set; } = Color.White;
 
 	[Property]
-	[DefaultValue(1.0f)]
+	[DefaultValue( 1.0f )]
 	[Description( "Alpha value of the sprite" )]
-	public float Alpha { get; set; }
+	public float Alpha { get; set; } = 1.0f;
 
 	[Property]
 	[Description( "Changes billboard behaviour" )]

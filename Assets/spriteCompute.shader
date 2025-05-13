@@ -14,10 +14,10 @@ CS
 	void MainCs( uint3 id : SV_DispatchThreadID )
 	{
 		uint count = IndirectDrawCount[0];
-		IndirectDrawCountBuffer[0] = 6;  // IndexCountPerInstance
-		IndirectDrawCountBuffer[1] = count;  // InstanceCount
-		IndirectDrawCountBuffer[2] = 0;  // StartIndexLocation
-		IndirectDrawCountBuffer[3] = 0;  // BaseVertexLocation
-		IndirectDrawCountBuffer[4] = 0;  // StartInstanceLocation
+		IndirectDrawCountBuffer[0] = 6;  		// IndexCountPerInstance
+		IndirectDrawCountBuffer[1] = count;  	// InstanceCount
+		IndirectDrawCountBuffer[2] = 0;  		// StartIndexLocation
+		IndirectDrawCountBuffer[3] = 0;  		// BaseVertexLocation
+		IndirectDrawCountBuffer[4] = 0;  		// StartInstanceLocation
 	}	
 }

@@ -25,6 +25,7 @@ CS
 	RWStructuredBuffer<uint> SortedMapping < Attribute("sortedMapping"); >;
 
 	uint SpriteCount < Attribute( "SpriteCount" ); >;
+	uint Opaque < Attribute("Opaque"); >;
 
 	bool IsSphereInsideFrustum(float3 center, float radius)
 	{
